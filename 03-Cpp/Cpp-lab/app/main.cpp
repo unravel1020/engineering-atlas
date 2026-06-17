@@ -1,9 +1,15 @@
+#include "Event.h"
+#include "Logger.h"
 #include "Timer.h"
 
 int main() {
-  Timer timer;
+  Logger::log("system start");
 
-  timer.Start();
+  Timer t;
+  t.Start();
+
+  Event e;
+  e.trigger();
 
   return 0;
 }

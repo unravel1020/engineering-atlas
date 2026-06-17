@@ -1,23 +1,23 @@
-cmake_minimum_required(VERSION 3.22)
+cmake_minimum_required(VERSION 3.16)
+project(CppLab LANGUAGES CXX)
 
-project(CppLab)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
-set(CMAKE_CXX_STANDARD 20)
+# build输出
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/build)
 
-add_library(timer
-    timer/Timer.cpp
-)
+# ===== modules统一管理 =====
+add_subdirectory(modules/timer)
+add_subdirectory(modules/event)
+add_subdirectory(modules/logger)
 
-target_include_directories(timer
-    PUBLIC
-    timer
-)
-
-add_executable(main
-    app/main.cpp
-)
+# ===== app入口 =====
+add_executable(main app/main.cpp)
 
 target_link_libraries(main
     PRIVATE
-    timer
+        timer
+        event
+        logger
 )
