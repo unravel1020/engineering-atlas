@@ -1,9 +1,26 @@
+# Build
 build/
+out/
+bin/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+Makefile
+
+# Clang
 .cache/
 
+# VSCode
+.vscode/
+
+# Linux
 *.o
 *.a
 *.so
-*.exe
+*.out
 
-compile_commands.json
+# Executable
+main
