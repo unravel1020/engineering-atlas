@@ -70,7 +70,16 @@ void Inference::init_io_names() {
 std::vector<float> Inference::run(const cv::Mat &img) {
 
   int c, h, w;
-  auto input_tensor_values = preProcessor::mat_to_tensor_nchw(img, c, h, w);
+
+  int target_h = static_cast<int>(inputs[0].shape[2]);
+
+  int target_w = static_cast<int>(inputs[0].shape[3]);
+
+  auto input_tensor_values =
+      preProcessor::mat_to_tensor_nchw(img, c, h, w, target_h, target_w);
+
+  std::cout << "Model Input Shape: " << target_h << " x " << target_w
+            << std::endl;
 
   std::vector<int64_t> input_shape = {1, c, h, w};
 

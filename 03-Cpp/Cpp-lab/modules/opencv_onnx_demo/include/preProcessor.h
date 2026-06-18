@@ -3,5 +3,5 @@
 
 namespace preProcessor {
 std::vector<float> mat_to_tensor_nchw(const cv::Mat &img, int &c, int &h,
-                                      int &w);
+                                      int &w, int target_h, int target_w);
 } // namespace preProcessor
