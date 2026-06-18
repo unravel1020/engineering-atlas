@@ -1,7 +1,10 @@
 #include "utils.h"
 #include <algorithm>
+#include <cmath>
+#include <cstddef>
 #include <fstream>
 #include <numeric>
+#include <vector>
 
 namespace utils {
 
@@ -51,6 +54,24 @@ std::vector<std::string> loadLabels(const std::string &path) {
   }
 
   return labels;
+}
+
+std::vector<float> softmax(const std::vector<float> &logits) {
+  std::vector<float> probs(logits.size());
+
+  float maxValue = *std::max_element(logits.begin(), logits.end());
+
+  float sum = 0.0f;
+
+  for (size_t i = 0; i < logits.size(); i++) {
+    probs[i] = std::exp(logits[i] - maxValue);
+    sum += probs[i];
+  }
+
+  for (auto x : probs) {
+    x /= sum;
+  }
+  return probs;
 }
 
 } // namespace utils

@@ -20,9 +20,11 @@ int main() {
 
   auto labels = utils::loadLabels("data/imagenet_classes.txt");
 
+  auto probs = utils::softmax(output);
+
   std::cout << "Top-5 indices:\n";
   for (auto i : topk) {
-    std::cout << labels[i] << " score=" << output[i] << "\n";
+    std::cout << labels[i] << " probilitiy=" << probs[i] * 100.0f << "%\n";
   }
 
   return 0;
