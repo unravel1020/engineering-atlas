@@ -1,4 +1,6 @@
 #include "inference.h"
+#include "postProcessor.h"
+#include "preProcessor.h"
 #include "utils.h"
 #include <iostream>
 
@@ -22,7 +24,7 @@ void Inference::init_io_names() {
 std::vector<float> Inference::run(const cv::Mat &img) {
 
   int c, h, w;
-  auto input_tensor_values = utils::mat_to_tensor_nchw(img, c, h, w);
+  auto input_tensor_values = preProcessor::mat_to_tensor_nchw(img, c, h, w);
 
   std::vector<int64_t> input_shape = {1, c, h, w};
 
@@ -44,4 +46,4 @@ std::vector<float> Inference::run(const cv::Mat &img) {
   size_t out_size = output[0].GetTensorTypeAndShapeInfo().GetElementCount();
 
   return std::vector<float>(out, out + out_size);
-}
+} // namespace inference

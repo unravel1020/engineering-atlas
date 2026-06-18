@@ -20,4 +20,4 @@ private:
   std::string output_name;
 
   void init_io_names();
-};
+}; // namespace inference
