@@ -1,4 +1,6 @@
 #include "inference.h"
+#include "postProcessor.h"
+#include "preProcessor.h"
 #include "utils.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -16,11 +18,11 @@ int main() {
 
   auto output = model.run(img);
 
-  auto topk = utils::topk(output, 5);
+  auto topk = postProcessor::topk(output, 5);
 
-  auto labels = utils::loadLabels("data/imagenet_classes.txt");
+  auto labels = postProcessor::loadLabels("data/imagenet_classes.txt");
 
-  auto probs = utils::softmax(output);
+  auto probs = postProcessor::softmax(output);
 
   std::cout << "Top-5 indices:\n";
   for (auto i : topk) {
