@@ -11,6 +11,52 @@ Inference::Inference(const std::string &model_path)
   session = Ort::Session(env, model_path.c_str(), options);
 
   init_io_names();
+
+  parseModelInfo();
+}
+
+void Inference::parseModelInfo() {
+  Ort::AllocatorWithDefaultOptions allocator;
+
+  size_t inputCount = session.GetInputCount();
+
+  for (size_t i = 0; i < inputCount; ++i) {
+    TensorInfo info;
+
+    auto name = session.GetInputNameAllocated(i, allocator);
+
+    info.name = name.get();
+
+    auto typeInfo = session.GetInputTypeInfo(i);
+
+    auto tensorInfo = typeInfo.GetTensorTypeAndShapeInfo();
+
+    info.shape = tensorInfo.GetShape();
+
+    info.type = tensorInfo.GetElementType();
+
+    inputs.push_back(info);
+  }
+
+  size_t outputCount = session.GetOutputCount();
+
+  for (size_t i = 0; i < outputCount; ++i) {
+    TensorInfo info;
+
+    auto name = session.GetOutputNameAllocated(i, allocator);
+
+    info.name = name.get();
+
+    auto typeInfo = session.GetOutputTypeInfo(i);
+
+    auto tensorInfo = typeInfo.GetTensorTypeAndShapeInfo();
+
+    info.shape = tensorInfo.GetShape();
+
+    info.type = tensorInfo.GetElementType();
+
+    outputs.push_back(info);
+  }
 }
 
 void Inference::init_io_names() {
@@ -47,3 +93,29 @@ std::vector<float> Inference::run(const cv::Mat &img) {
 
   return std::vector<float>(out, out + out_size);
 } // namespace inference
+
+void Inference::printModelInfo() const {
+  std::cout << "\n=== Inputs ===\n";
+
+  for (const auto &input : inputs) {
+    std::cout << input.name << " : [";
+
+    for (auto dim : input.shape) {
+      std::cout << dim << " ";
+    }
+
+    std::cout << "]\n";
+  }
+
+  std::cout << "\n=== Outputs ===\n";
+
+  for (const auto &output : outputs) {
+    std::cout << output.name << " : [";
+
+    for (auto dim : output.shape) {
+      std::cout << dim << " ";
+    }
+
+    std::cout << "]\n";
+  }
+}

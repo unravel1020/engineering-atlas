@@ -35,6 +35,8 @@ int main() {
     total += p;
   }
 
+  model.printModelInfo();
+
   std::cout << "sum = " << total << std::endl;
 
   return 0;
