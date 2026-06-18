@@ -27,5 +27,13 @@ int main() {
     std::cout << labels[i] << " probilitiy=" << probs[i] * 100.0f << "%\n";
   }
 
+  float total = 0.0f;
+
+  for (auto p : probs) {
+    total += p;
+  }
+
+  std::cout << "sum = " << total << std::endl;
+
   return 0;
 }

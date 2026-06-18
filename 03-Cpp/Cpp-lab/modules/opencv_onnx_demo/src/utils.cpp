@@ -68,7 +68,7 @@ std::vector<float> softmax(const std::vector<float> &logits) {
     sum += probs[i];
   }
 
-  for (auto x : probs) {
+  for (auto &x : probs) {
     x /= sum;
   }
   return probs;
