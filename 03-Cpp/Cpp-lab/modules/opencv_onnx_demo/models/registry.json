@@ -1,0 +1,9 @@
+{
+  "version": "1.0.0",
+  "models": {
+    "squeezenet1.1-7": {
+      "task": "classification",
+      "dir": "squeezenet1.1-7"
+    }
+  }
+}

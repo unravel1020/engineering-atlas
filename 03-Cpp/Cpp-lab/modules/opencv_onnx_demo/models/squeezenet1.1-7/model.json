@@ -1,0 +1,32 @@
+{
+  "name": "squeezenet1.1-7",
+  "task": "classification",
+  "model_file": "model.onnx",
+  "inputs": [
+    {
+      "name": "data",
+      "type": "float32",
+      "preprocess": {
+        "color_format": "BGR",
+        "resize_mode": "stretch",
+        "target_h": 224,
+        "target_w": 224,
+        "scale": 0.003921568859,
+        "mean": [0.0, 0.0, 0.0],
+        "std": [1.0, 1.0, 1.0],
+        "layout": "NCHW"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "squeezenet0_flatten0_reshape0",
+      "type": "float32",
+      "postprocess": {
+        "activation": "softmax",
+        "topk": 5,
+        "labels_file": "labels.txt"
+      }
+    }
+  ]
+}
