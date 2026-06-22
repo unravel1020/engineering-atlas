@@ -1,3 +1,4 @@
+#include "benchmark.h"
 #include "modelManager.h"
 #include "pipeline.h"
 #include "result.h"
@@ -7,7 +8,14 @@
 #include <opencv2/opencv.hpp>
 #include <string>
 
-int main() {
+int main(int argc, char *argv[]) {
+  bool run_benchmark = false;
+  for (int i = 1; i < argc; ++i) {
+    if (std::string(argv[i]) == "--benchmark") {
+      run_benchmark = true;
+    }
+  }
+
   ModelManager manager("models/registry.json");
 
   for (const auto &model_name : manager.modelNames()) {
@@ -25,12 +33,17 @@ int main() {
     }
 
     auto pipe = pipeline::PipelineFactory::create(model_info.task(), model);
-    auto task_result = pipe->run(img);
 
-    task_result->print(std::cout);
-    std::string out_path = "output/" + model_name + "_result.jpg";
-    task_result->save(out_path, img);
-    std::cout << "Saved visualization to " << out_path << "\n";
+    if (run_benchmark) {
+      auto bench_result = benchmark::benchmarkPipeline(*pipe, img, 3, 10);
+      benchmark::printBenchmarkResult(std::cout, bench_result);
+    } else {
+      auto task_result = pipe->run(img);
+      task_result->print(std::cout);
+      std::string out_path = "output/" + model_name + "_result.jpg";
+      task_result->save(out_path, img);
+      std::cout << "Saved visualization to " << out_path << "\n";
+    }
 
     model->printModelInfo();
   }
