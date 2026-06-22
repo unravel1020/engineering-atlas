@@ -58,18 +58,17 @@ std::vector<float> softmax(const std::vector<float> &logits) {
 ClassificationResult classify(const std::vector<float> &output,
                               const PostprocessConfig &cfg,
                               const std::string &model_dir) {
-  ClassificationResult result;
-
-  result.probs = softmax(output);
-  result.indices = topk(result.probs, cfg.topk);
-  result.labels = loadLabels(model_dir + "/" + cfg.labels_file);
+  std::vector<float> probs = softmax(output);
+  std::vector<int> indices = topk(probs, cfg.topk);
+  std::vector<std::string> labels = loadLabels(model_dir + "/" + cfg.labels_file);
 
   // 防御 labels 文件行数不足导致的越界访问
-  while (result.labels.size() < output.size()) {
-    result.labels.emplace_back();
+  while (labels.size() < output.size()) {
+    labels.emplace_back();
   }
 
-  return result;
+  return ClassificationResult(model_dir, cfg, std::move(labels),
+                              std::move(probs), std::move(indices));
 }
 
 namespace {
@@ -94,10 +93,10 @@ float computeIoU(const Detection &a, const Detection &b) {
 
 } // namespace
 
-std::vector<Detection> detect(const std::vector<float> &output,
-                              const PostprocessConfig &cfg,
-                              const std::string &model_dir,
-                              const PreprocessInfo &preprocess_info) {
+DetectionResult detect(const std::vector<float> &output,
+                       const PostprocessConfig &cfg,
+                       const std::string &model_dir,
+                       const PreprocessInfo &preprocess_info) {
   std::vector<Detection> detections;
 
   // YOLOv8 default ONNX output shape: 1 x 84 x 8400
@@ -105,89 +104,89 @@ std::vector<Detection> detect(const std::vector<float> &output,
   const int num_candidates = 8400;
   const int total_channels = 84;
 
-  if (output.size() != static_cast<size_t>(total_channels * num_candidates)) {
-    return detections;
-  }
+  if (output.size() == static_cast<size_t>(total_channels * num_candidates)) {
+    for (int i = 0; i < num_candidates; ++i) {
+      float x = output[i];
+      float y = output[num_candidates + i];
+      float w = output[2 * num_candidates + i];
+      float h = output[3 * num_candidates + i];
 
-  std::vector<Candidate> candidates;
-
-  for (int i = 0; i < num_candidates; ++i) {
-    float x = output[i];
-    float y = output[num_candidates + i];
-    float w = output[2 * num_candidates + i];
-    float h = output[3 * num_candidates + i];
-
-    float max_score = 0.0f;
-    int class_id = 0;
-    for (int c = 0; c < num_classes; ++c) {
-      float score = output[(4 + c) * num_candidates + i];
-      if (score > max_score) {
-        max_score = score;
-        class_id = c;
+      float max_score = 0.0f;
+      int class_id = 0;
+      for (int c = 0; c < num_classes; ++c) {
+        float score = output[(4 + c) * num_candidates + i];
+        if (score > max_score) {
+          max_score = score;
+          class_id = c;
+        }
       }
-    }
 
-    float confidence = max_score;
-    if (confidence < cfg.conf_threshold) {
-      continue;
-    }
-
-    // xywh -> xyxy in model input coordinate system
-    float x1_model = x - w / 2.0f;
-    float y1_model = y - h / 2.0f;
-    float x2_model = x + w / 2.0f;
-    float y2_model = y + h / 2.0f;
-
-    // map back to original image
-    float scale = preprocess_info.scale;
-    float x1 = (x1_model - preprocess_info.pad_left) / scale;
-    float y1 = (y1_model - preprocess_info.pad_top) / scale;
-    float x2 = (x2_model - preprocess_info.pad_left) / scale;
-    float y2 = (y2_model - preprocess_info.pad_top) / scale;
-
-    // clip to original image bounds
-    x1 = std::max(0.0f, std::min(x1, static_cast<float>(preprocess_info.orig_w)));
-    y1 = std::max(0.0f, std::min(y1, static_cast<float>(preprocess_info.orig_h)));
-    x2 = std::max(0.0f, std::min(x2, static_cast<float>(preprocess_info.orig_w)));
-    y2 = std::max(0.0f, std::min(y2, static_cast<float>(preprocess_info.orig_h)));
-
-    Detection det;
-    det.class_id = class_id;
-    det.confidence = confidence;
-    det.x1 = x1;
-    det.y1 = y1;
-    det.x2 = x2;
-    det.y2 = y2;
-    detections.push_back(det);
-  }
-
-  // NMS
-  std::sort(detections.begin(), detections.end(),
-            [](const Detection &a, const Detection &b) {
-              return a.confidence > b.confidence;
-            });
-
-  std::vector<Detection> result;
-  std::vector<bool> suppressed(detections.size(), false);
-
-  for (size_t i = 0; i < detections.size(); ++i) {
-    if (suppressed[i]) {
-      continue;
-    }
-
-    result.push_back(detections[i]);
-
-    for (size_t j = i + 1; j < detections.size(); ++j) {
-      if (suppressed[j]) {
+      float confidence = max_score;
+      if (confidence < cfg.conf_threshold) {
         continue;
       }
-      if (computeIoU(detections[i], detections[j]) > cfg.nms_threshold) {
-        suppressed[j] = true;
+
+      // xywh -> xyxy in model input coordinate system
+      float x1_model = x - w / 2.0f;
+      float y1_model = y - h / 2.0f;
+      float x2_model = x + w / 2.0f;
+      float y2_model = y + h / 2.0f;
+
+      // map back to original image
+      float scale = preprocess_info.scale;
+      float x1 = (x1_model - preprocess_info.pad_left) / scale;
+      float y1 = (y1_model - preprocess_info.pad_top) / scale;
+      float x2 = (x2_model - preprocess_info.pad_left) / scale;
+      float y2 = (y2_model - preprocess_info.pad_top) / scale;
+
+      // clip to original image bounds
+      x1 = std::max(0.0f, std::min(x1, static_cast<float>(preprocess_info.orig_w)));
+      y1 = std::max(0.0f, std::min(y1, static_cast<float>(preprocess_info.orig_h)));
+      x2 = std::max(0.0f, std::min(x2, static_cast<float>(preprocess_info.orig_w)));
+      y2 = std::max(0.0f, std::min(y2, static_cast<float>(preprocess_info.orig_h)));
+
+      Detection det;
+      det.class_id = class_id;
+      det.confidence = confidence;
+      det.x1 = x1;
+      det.y1 = y1;
+      det.x2 = x2;
+      det.y2 = y2;
+      detections.push_back(det);
+    }
+
+    // NMS
+    std::sort(detections.begin(), detections.end(),
+              [](const Detection &a, const Detection &b) {
+                return a.confidence > b.confidence;
+              });
+
+    std::vector<Detection> nms_result;
+    std::vector<bool> suppressed(detections.size(), false);
+
+    for (size_t i = 0; i < detections.size(); ++i) {
+      if (suppressed[i]) {
+        continue;
+      }
+
+      nms_result.push_back(detections[i]);
+
+      for (size_t j = i + 1; j < detections.size(); ++j) {
+        if (suppressed[j]) {
+          continue;
+        }
+        if (computeIoU(detections[i], detections[j]) > cfg.nms_threshold) {
+          suppressed[j] = true;
+        }
       }
     }
+
+    detections = std::move(nms_result);
   }
 
-  return result;
+  std::vector<std::string> labels = loadLabels(model_dir + "/" + cfg.labels_file);
+  return DetectionResult(model_dir, cfg, std::move(labels),
+                         std::move(detections));
 }
 
 } // namespace postProcessor

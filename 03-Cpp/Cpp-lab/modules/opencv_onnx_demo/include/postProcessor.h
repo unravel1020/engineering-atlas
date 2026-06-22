@@ -1,32 +1,17 @@
 #pragma once
 
 #include "modelInfo.h"
+#include "result.h"
 #include <string>
 #include <vector>
 
 namespace postProcessor {
 
-struct ClassificationResult {
-  std::vector<std::string> labels;
+using ClassificationResult = result::ClassificationResult;
 
-  std::vector<float> probs;
+using Detection = result::Detection;
 
-  std::vector<int> indices;
-};
-
-struct Detection {
-  int class_id = 0;
-
-  float confidence = 0.0f;
-
-  float x1 = 0.0f;
-
-  float y1 = 0.0f;
-
-  float x2 = 0.0f;
-
-  float y2 = 0.0f;
-};
+using DetectionResult = result::DetectionResult;
 
 std::vector<int> topk(const std::vector<float> &data, int k);
 
@@ -38,9 +23,9 @@ ClassificationResult classify(const std::vector<float> &output,
                               const PostprocessConfig &cfg,
                               const std::string &model_dir);
 
-std::vector<Detection> detect(const std::vector<float> &output,
-                              const PostprocessConfig &cfg,
-                              const std::string &model_dir,
-                              const PreprocessInfo &preprocess_info);
+DetectionResult detect(const std::vector<float> &output,
+                       const PostprocessConfig &cfg,
+                       const std::string &model_dir,
+                       const PreprocessInfo &preprocess_info);
 
 } // namespace postProcessor
