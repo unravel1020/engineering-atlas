@@ -1,45 +1,53 @@
-#include "inference.h"
-#include "modelLoader.h"
-#include "modelRegistry.h"
+#include "modelManager.h"
 #include "postProcessor.h"
 #include "utils.h"
 #include <iostream>
 #include <opencv2/opencv.hpp>
 
 int main() {
-  auto registry = ModelRegistry::load("models/registry.json");
+  ModelManager manager("models/registry.json");
 
   const std::string model_name = "squeezenet1.1-7";
-  const std::string model_dir = registry.modelDir(model_name);
+  manager.select(model_name);
 
-  auto model_info = ModelLoader::load(model_dir, model_name);
-  Inference model(model_info);
+  auto model = manager.current();
+  const auto &model_info = model->modelInfo();
 
-  cv::Mat img = cv::imread(model_dir + "/test_data/dog.jpg");
+  std::cout << "Current model: " << model_name << "\n";
+  std::cout << "Current task: " << model_info.task() << "\n";
+
+  cv::Mat img = cv::imread(model_info.modelDir() + "/test_data/dog.jpg");
 
   if (img.empty()) {
     std::cout << "image not found\n";
     return -1;
   }
 
-  auto output = model.run(img);
-
-  auto result =
-      postProcessor::classify(output, model_info.postprocess(), model_dir);
-
-  std::cout << "Top-" << model_info.postprocess().topk << " indices:\n";
-  for (auto i : result.indices) {
-    std::cout << result.labels[i] << " probability=" << result.probs[i] * 100.0f
-              << "%\n";
-  }
+  auto output = manager.run(img);
 
   float total = 0.0f;
 
-  for (auto p : result.probs) {
-    total += p;
+  if (model_info.task() == "classification") {
+    auto result =
+        postProcessor::classify(output, model_info.postprocess(),
+                                model_info.modelDir());
+
+    std::cout << "Top-" << model_info.postprocess().topk << " indices:\n";
+    for (auto i : result.indices) {
+      std::cout << result.labels[i] << " probability=" << result.probs[i] * 100.0f
+                << "%\n";
+    }
+
+    for (auto p : result.probs) {
+      total += p;
+    }
+  } else {
+    for (auto p : output) {
+      total += p;
+    }
   }
 
-  model.printModelInfo();
+  model->printModelInfo();
 
   std::cout << "sum = " << total << std::endl;
 
