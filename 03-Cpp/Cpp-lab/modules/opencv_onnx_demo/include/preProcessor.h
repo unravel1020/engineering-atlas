@@ -7,5 +7,5 @@
 namespace preProcessor {
 std::vector<float> mat_to_tensor(const cv::Mat &img, const TensorInfo &info,
                                  const PreprocessConfig &cfg, int &c, int &h,
-                                 int &w);
+                                 int &w, PreprocessInfo *info_out = nullptr);
 } // namespace preProcessor

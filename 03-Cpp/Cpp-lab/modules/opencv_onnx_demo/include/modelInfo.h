@@ -1,6 +1,7 @@
 #pragma once
 
 #include <onnxruntime_cxx_api.h>
+#include <cstdint>
 #include <string>
 #include <vector>
 
@@ -28,6 +29,30 @@ struct PreprocessConfig {
   std::vector<float> std = {1.0f, 1.0f, 1.0f};
 
   std::string layout = "NCHW";
+
+  std::vector<uint8_t> pad_color = {114, 114, 114};
+};
+
+struct PreprocessInfo {
+  int orig_h = 0;
+
+  int orig_w = 0;
+
+  int model_h = 0;
+
+  int model_w = 0;
+
+  float scale = 1.0f;
+
+  int pad_top = 0;
+
+  int pad_bottom = 0;
+
+  int pad_left = 0;
+
+  int pad_right = 0;
+
+  std::string resize_mode;
 };
 
 struct PostprocessConfig {
@@ -36,6 +61,10 @@ struct PostprocessConfig {
   int topk = 5;
 
   std::string labels_file;
+
+  float conf_threshold = 0.25f;
+
+  float nms_threshold = 0.45f;
 };
 
 class ModelInfo {

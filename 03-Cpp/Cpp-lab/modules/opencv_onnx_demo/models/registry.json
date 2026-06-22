@@ -4,6 +4,10 @@
     "squeezenet1.1-7": {
       "task": "classification",
       "dir": "squeezenet1.1-7"
+    },
+    "yolov8n": {
+      "task": "detection",
+      "dir": "yolov8n"
     }
   }
 }

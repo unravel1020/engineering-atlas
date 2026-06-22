@@ -7,9 +7,19 @@
 #include <unordered_map>
 #include <vector>
 
+struct InferenceResult {
+  std::unordered_map<std::string, std::vector<float>> outputs;
+  PreprocessInfo preprocess;
+};
+
 class Inference {
 public:
   explicit Inference(const ModelInfo &model_info);
+
+  InferenceResult
+  runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_images);
+
+  InferenceResult runWithInfo(const cv::Mat &img);
 
   std::unordered_map<std::string, std::vector<float>>
   run(const std::unordered_map<std::string, cv::Mat> &input_images);

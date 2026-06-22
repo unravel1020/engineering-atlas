@@ -1,0 +1,33 @@
+{
+  "name": "yolov8n",
+  "task": "detection",
+  "model_file": "model.onnx",
+  "inputs": [
+    {
+      "name": "images",
+      "type": "float32",
+      "preprocess": {
+        "color_format": "RGB",
+        "resize_mode": "letterbox",
+        "target_h": 640,
+        "target_w": 640,
+        "pad_color": [114, 114, 114],
+        "scale": 0.003921568859,
+        "mean": [0.0, 0.0, 0.0],
+        "std": [1.0, 1.0, 1.0],
+        "layout": "NCHW"
+      }
+    }
+  ],
+  "outputs": [
+    {
+      "name": "output0",
+      "type": "float32",
+      "postprocess": {
+        "conf_threshold": 0.25,
+        "nms_threshold": 0.45,
+        "labels_file": "labels.txt"
+      }
+    }
+  ]
+}

@@ -58,15 +58,19 @@ std::vector<int64_t> Inference::fixInputShape(const std::vector<int64_t> &shape,
   return result;
 }
 
-std::unordered_map<std::string, std::vector<float>>
-Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
+InferenceResult
+Inference::runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_images) {
   struct InputData {
-    std::vector<float> values;
+    std::vector<float> values_f32;
+    std::vector<Ort::Float16_t> values_f16;
     std::vector<int64_t> shape;
+    PreprocessInfo preprocess;
+    ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
   };
 
   std::vector<InputData> input_datas;
   std::vector<const char *> input_names;
+  PreprocessInfo first_preprocess;
 
   for (const auto &info : model_info_.inputs()) {
     auto it = input_images.find(info.name);
@@ -76,9 +80,23 @@ Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
 
     int c, h, w;
     InputData data;
-    data.values = preProcessor::mat_to_tensor(it->second, info,
-                                              model_info_.preprocess(), c, h, w);
+    PreprocessInfo preprocess;
+    data.values_f32 = preProcessor::mat_to_tensor(it->second, info,
+                                                  model_info_.preprocess(), c, h, w,
+                                                  &preprocess);
     data.shape = fixInputShape(info.shape, c, h, w);
+    data.preprocess = preprocess;
+    data.type = info.type;
+
+    if (data.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT &&
+        data.type != ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16) {
+      throw std::runtime_error("Unsupported input data type for tensor '" +
+                               info.name + "'");
+    }
+
+    if (input_datas.empty()) {
+      first_preprocess = preprocess;
+    }
 
     input_datas.push_back(std::move(data));
     input_names.push_back(info.name.c_str());
@@ -89,9 +107,19 @@ Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
 
   std::vector<Ort::Value> input_tensors;
   for (auto &data : input_datas) {
-    input_tensors.push_back(Ort::Value::CreateTensor<float>(
-        memory_info, data.values.data(), data.values.size(),
-        data.shape.data(), data.shape.size()));
+    if (data.type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16) {
+      data.values_f16.reserve(data.values_f32.size());
+      for (float v : data.values_f32) {
+        data.values_f16.emplace_back(v);
+      }
+      input_tensors.push_back(Ort::Value::CreateTensor<Ort::Float16_t>(
+          memory_info, data.values_f16.data(), data.values_f16.size(),
+          data.shape.data(), data.shape.size()));
+    } else {
+      input_tensors.push_back(Ort::Value::CreateTensor<float>(
+          memory_info, data.values_f32.data(), data.values_f32.size(),
+          data.shape.data(), data.shape.size()));
+    }
   }
 
   std::vector<const char *> output_names;
@@ -105,23 +133,43 @@ Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
 
   std::unordered_map<std::string, std::vector<float>> outputs;
   for (size_t i = 0; i < output_values.size(); ++i) {
-    float *out = output_values[i].GetTensorMutableData<float>();
-    size_t out_size =
-        output_values[i].GetTensorTypeAndShapeInfo().GetElementCount();
-    outputs[model_info_.outputs()[i].name] =
-        std::vector<float>(out, out + out_size);
+    const std::string &name = model_info_.outputs()[i].name;
+    auto type_info = output_values[i].GetTensorTypeAndShapeInfo();
+    size_t out_size = type_info.GetElementCount();
+    auto element_type = type_info.GetElementType();
+
+    if (element_type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16) {
+      Ort::Float16_t *out = output_values[i].GetTensorMutableData<Ort::Float16_t>();
+      std::vector<float> out_f32(out_size);
+      for (size_t j = 0; j < out_size; ++j) {
+        out_f32[j] = static_cast<float>(out[j]);
+      }
+      outputs[name] = std::move(out_f32);
+    } else {
+      float *out = output_values[i].GetTensorMutableData<float>();
+      outputs[name] = std::vector<float>(out, out + out_size);
+    }
   }
 
-  return outputs;
+  return InferenceResult{outputs, first_preprocess};
 }
 
-std::vector<float> Inference::run(const cv::Mat &img) {
+InferenceResult Inference::runWithInfo(const cv::Mat &img) {
   if (model_info_.inputs().empty() || model_info_.outputs().empty()) {
     throw std::runtime_error("Model has no inputs or outputs");
   }
 
-  auto outputs = run({{model_info_.inputs()[0].name, img}});
-  return outputs[model_info_.outputs()[0].name];
+  return runWithInfo({{model_info_.inputs()[0].name, img}});
+}
+
+std::unordered_map<std::string, std::vector<float>>
+Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
+  return runWithInfo(input_images).outputs;
+}
+
+std::vector<float> Inference::run(const cv::Mat &img) {
+  auto result = runWithInfo(img);
+  return result.outputs[model_info_.outputs()[0].name];
 }
 
 void Inference::printModelInfo() const { model_info_.print(); }
