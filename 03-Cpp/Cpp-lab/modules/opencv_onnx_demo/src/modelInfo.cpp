@@ -3,16 +3,20 @@
 
 ModelInfo::ModelInfo(const std::string &model_dir,
                      const std::string &model_file,
+                     const std::string &task,
                      const std::vector<TensorInfo> &inputs,
                      const std::vector<TensorInfo> &outputs,
                      const PreprocessConfig &preprocess,
                      const PostprocessConfig &postprocess)
-    : model_dir_(model_dir), model_file_(model_file), inputs_(inputs),
-      outputs_(outputs), preprocess_(preprocess), postprocess_(postprocess) {}
+    : model_dir_(model_dir), model_file_(model_file), task_(task),
+      inputs_(inputs), outputs_(outputs), preprocess_(preprocess),
+      postprocess_(postprocess) {}
 
 const std::string &ModelInfo::modelDir() const { return model_dir_; }
 
 std::string ModelInfo::modelPath() const { return model_dir_ + "/" + model_file_; }
+
+const std::string &ModelInfo::task() const { return task_; }
 
 const std::vector<TensorInfo> &ModelInfo::inputs() const { return inputs_; }
 

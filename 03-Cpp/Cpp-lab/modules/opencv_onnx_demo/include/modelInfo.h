@@ -43,6 +43,7 @@ public:
   ModelInfo() = default;
 
   ModelInfo(const std::string &model_dir, const std::string &model_file,
+            const std::string &task,
             const std::vector<TensorInfo> &inputs,
             const std::vector<TensorInfo> &outputs,
             const PreprocessConfig &preprocess,
@@ -51,6 +52,8 @@ public:
   const std::string &modelDir() const;
 
   std::string modelPath() const;
+
+  const std::string &task() const;
 
   const std::vector<TensorInfo> &inputs() const;
 
@@ -70,6 +73,8 @@ private:
   std::string model_dir_;
 
   std::string model_file_;
+
+  std::string task_;
 
   std::vector<TensorInfo> inputs_;
 

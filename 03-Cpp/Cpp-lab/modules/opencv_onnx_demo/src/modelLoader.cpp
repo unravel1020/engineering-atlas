@@ -76,6 +76,7 @@ ModelInfo ModelLoader::load(const std::string &model_dir,
   ifs >> j;
 
   std::string model_file = j.value("model_file", "model.onnx");
+  std::string task = j.value("task", "unknown");
 
   std::vector<TensorInfo> inputs;
   for (const auto &input : j["inputs"]) {
@@ -103,6 +104,6 @@ ModelInfo ModelLoader::load(const std::string &model_dir,
     postprocess = parsePostprocess(j["outputs"][0]["postprocess"]);
   }
 
-  return ModelInfo(model_dir, model_file, inputs, outputs, preprocess,
+  return ModelInfo(model_dir, model_file, task, inputs, outputs, preprocess,
                    postprocess);
 }
