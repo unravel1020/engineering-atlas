@@ -1,5 +1,5 @@
 #include "modelManager.h"
-#include "postProcessor.h"
+#include "pipeline.h"
 #include "result.h"
 #include "utils.h"
 #include <iostream>
@@ -24,24 +24,8 @@ int main() {
       continue;
     }
 
-    auto inference_result = model->runWithInfo(img);
-
-    std::unique_ptr<result::Result> task_result;
-    if (model_info.task() == "classification") {
-      auto output = inference_result.outputs.at(model_info.outputs()[0].name);
-      task_result = std::make_unique<result::ClassificationResult>(
-          postProcessor::classify(output, model_info.postprocess(),
-                                  model_info.modelDir()));
-    } else if (model_info.task() == "detection") {
-      auto output = inference_result.outputs.at(model_info.outputs()[0].name);
-      task_result = std::make_unique<result::DetectionResult>(
-          postProcessor::detect(output, model_info.postprocess(),
-                                model_info.modelDir(),
-                                inference_result.preprocess));
-    } else {
-      std::cout << "Unsupported task: " << model_info.task() << "\n";
-      continue;
-    }
+    auto pipe = pipeline::PipelineFactory::create(model_info.task(), model);
+    auto task_result = pipe->run(img);
 
     task_result->print(std::cout);
     std::string out_path = "output/" + model_name + "_result.jpg";
