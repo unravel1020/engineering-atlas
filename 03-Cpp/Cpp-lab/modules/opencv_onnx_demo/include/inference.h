@@ -4,24 +4,34 @@
 #include <onnxruntime_cxx_api.h>
 #include <opencv2/opencv.hpp>
 #include <string>
+#include <unordered_map>
+#include <vector>
 
 class Inference {
 public:
-  Inference(const std::string &model_path);
+  explicit Inference(const ModelInfo &model_info);
+
+  std::unordered_map<std::string, std::vector<float>>
+  run(const std::unordered_map<std::string, cv::Mat> &input_images);
 
   std::vector<float> run(const cv::Mat &img);
 
   void printModelInfo() const;
 
-private:
-  ModelInfo buildModelInfo(const std::string &model_path);
+  const ModelInfo &modelInfo() const;
 
 private:
-  Ort::Env env;
+  void syncTensorShape();
 
-  Ort::Session session;
+  std::vector<int64_t> fixInputShape(const std::vector<int64_t> &shape, int c,
+                                     int h, int w) const;
 
-  Ort::SessionOptions options;
+private:
+  Ort::Env env_;
+
+  Ort::Session session_;
+
+  Ort::SessionOptions options_;
 
   ModelInfo model_info_;
 };

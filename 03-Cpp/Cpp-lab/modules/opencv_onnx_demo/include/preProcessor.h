@@ -1,7 +1,11 @@
 #pragma once
+
+#include "modelInfo.h"
 #include <opencv2/opencv.hpp>
+#include <vector>
 
 namespace preProcessor {
-std::vector<float> mat_to_tensor_nchw(const cv::Mat &img, int &c, int &h,
-                                      int &w, int target_h, int target_w);
+std::vector<float> mat_to_tensor(const cv::Mat &img, const TensorInfo &info,
+                                 const PreprocessConfig &cfg, int &c, int &h,
+                                 int &w);
 } // namespace preProcessor
