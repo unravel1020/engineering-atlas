@@ -99,10 +99,18 @@ DetectionResult detect(const std::vector<float> &output,
                        const PreprocessInfo &preprocess_info) {
   std::vector<Detection> detections;
 
-  // YOLOv8 default ONNX output shape: 1 x 84 x 8400
-  const int num_classes = 80;
-  const int num_candidates = 8400;
-  const int total_channels = 84;
+  if (cfg.output_layout != "N_C_K") {
+    throw std::runtime_error("Unsupported detection output_layout: " +
+                             cfg.output_layout);
+  }
+  if (cfg.box_format != "xywh" && cfg.box_format != "xyxy") {
+    throw std::runtime_error("Unsupported detection box_format: " +
+                             cfg.box_format);
+  }
+
+  const int num_classes = cfg.num_classes;
+  const int num_candidates = cfg.num_candidates;
+  const int total_channels = 4 + num_classes;
 
   if (output.size() == static_cast<size_t>(total_channels * num_candidates)) {
     for (int i = 0; i < num_candidates; ++i) {
@@ -126,11 +134,17 @@ DetectionResult detect(const std::vector<float> &output,
         continue;
       }
 
-      // xywh -> xyxy in model input coordinate system
-      float x1_model = x - w / 2.0f;
-      float y1_model = y - h / 2.0f;
-      float x2_model = x + w / 2.0f;
-      float y2_model = y + h / 2.0f;
+      // box format -> xyxy in model input coordinate system
+      float x1_model = x;
+      float y1_model = y;
+      float x2_model = w;
+      float y2_model = h;
+      if (cfg.box_format == "xywh") {
+        x1_model = x - w / 2.0f;
+        y1_model = y - h / 2.0f;
+        x2_model = x + w / 2.0f;
+        y2_model = y + h / 2.0f;
+      }
 
       // map back to original image
       float scale = preprocess_info.scale;

@@ -65,6 +65,15 @@ struct PostprocessConfig {
   float conf_threshold = 0.25f;
 
   float nms_threshold = 0.45f;
+
+  // Detection-specific metadata
+  int num_classes = 80;
+
+  int num_candidates = 8400;
+
+  std::string box_format = "xywh"; // xywh | xyxy
+
+  std::string output_layout = "N_C_K"; // N_C_K: e.g. 1 x 84 x 8400
 };
 
 class ModelInfo {

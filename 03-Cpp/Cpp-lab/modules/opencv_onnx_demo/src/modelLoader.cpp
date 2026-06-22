@@ -46,6 +46,9 @@ PreprocessConfig parsePreprocess(const json &j) {
   if (j.contains("layout")) {
     cfg.layout = j["layout"];
   }
+  if (j.contains("pad_color")) {
+    cfg.pad_color = j["pad_color"].get<std::vector<uint8_t>>();
+  }
 
   return cfg;
 }
@@ -61,6 +64,24 @@ PostprocessConfig parsePostprocess(const json &j) {
   }
   if (j.contains("labels_file")) {
     cfg.labels_file = j["labels_file"];
+  }
+  if (j.contains("conf_threshold")) {
+    cfg.conf_threshold = j["conf_threshold"];
+  }
+  if (j.contains("nms_threshold")) {
+    cfg.nms_threshold = j["nms_threshold"];
+  }
+  if (j.contains("num_classes")) {
+    cfg.num_classes = j["num_classes"];
+  }
+  if (j.contains("num_candidates")) {
+    cfg.num_candidates = j["num_candidates"];
+  }
+  if (j.contains("box_format")) {
+    cfg.box_format = j["box_format"];
+  }
+  if (j.contains("output_layout")) {
+    cfg.output_layout = j["output_layout"];
   }
 
   return cfg;

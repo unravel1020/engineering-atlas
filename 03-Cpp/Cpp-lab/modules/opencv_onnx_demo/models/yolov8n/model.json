@@ -26,7 +26,11 @@
       "postprocess": {
         "conf_threshold": 0.25,
         "nms_threshold": 0.45,
-        "labels_file": "labels.txt"
+        "labels_file": "labels.txt",
+        "num_classes": 80,
+        "num_candidates": 8400,
+        "box_format": "xywh",
+        "output_layout": "N_C_K"
       }
     }
   ]

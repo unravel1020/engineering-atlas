@@ -1,14 +1,23 @@
 #include "preProcessor.h"
+#include <algorithm>
 #include <opencv2/opencv.hpp>
 
-namespace preProcessor {
+void PreProcessor::validateConfig(const PreprocessConfig &cfg) const {
+  if (cfg.layout != "NCHW" && cfg.layout != "NHWC") {
+    throw std::runtime_error("Unsupported preprocess layout: " + cfg.layout);
+  }
+  if (cfg.resize_mode != "stretch" && cfg.resize_mode != "letterbox") {
+    throw std::runtime_error("Unsupported resize_mode: " + cfg.resize_mode);
+  }
+  if (cfg.color_format != "BGR" && cfg.color_format != "RGB") {
+    throw std::runtime_error("Unsupported color_format: " + cfg.color_format);
+  }
+}
 
-namespace {
-
-cv::Mat letterbox(const cv::Mat &img, int target_h, int target_w,
-                  const std::vector<uint8_t> &pad_color, float &scale,
-                  int &pad_top, int &pad_bottom, int &pad_left,
-                  int &pad_right) {
+cv::Mat PreProcessor::letterbox(const cv::Mat &img, int target_h, int target_w,
+                                const std::vector<uint8_t> &pad_color,
+                                float &scale, int &pad_top, int &pad_bottom,
+                                int &pad_left, int &pad_right) const {
   float r = std::min(static_cast<float>(target_w) / img.cols,
                      static_cast<float>(target_h) / img.rows);
   scale = r;
@@ -32,12 +41,13 @@ cv::Mat letterbox(const cv::Mat &img, int target_h, int target_w,
   return padded;
 }
 
-} // namespace
-
-std::vector<float> mat_to_tensor(const cv::Mat &img, const TensorInfo &info,
-                                 const PreprocessConfig &cfg, int &c, int &h,
-                                 int &w, PreprocessInfo *info_out) {
+std::vector<float> PreProcessor::mat_to_tensor(const cv::Mat &img,
+                                               const TensorInfo &info,
+                                               const PreprocessConfig &cfg,
+                                               int &c, int &h, int &w,
+                                               PreprocessInfo *info_out) {
   (void)info;
+  validateConfig(cfg);
 
   if (info_out != nullptr) {
     info_out->orig_h = img.rows;
@@ -102,6 +112,19 @@ std::vector<float> mat_to_tensor(const cv::Mat &img, const TensorInfo &info,
   }
 
   return tensor;
+}
+
+namespace preProcessor {
+
+namespace {
+PreProcessor g_default_preprocessor;
+}
+
+std::vector<float> mat_to_tensor(const cv::Mat &img, const TensorInfo &info,
+                                 const PreprocessConfig &cfg, int &c, int &h,
+                                 int &w, PreprocessInfo *info_out) {
+  return g_default_preprocessor.mat_to_tensor(img, info, cfg, c, h, w,
+                                              info_out);
 }
 
 } // namespace preProcessor
