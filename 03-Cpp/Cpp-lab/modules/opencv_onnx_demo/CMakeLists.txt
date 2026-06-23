@@ -4,10 +4,12 @@ project(opencv_onnx_demo)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# ========== OpenCV ==========
+# OpenCV is required for image I/O and visualization; it is found first so
+# downstream targets can use its include dirs and libraries uniformly.
 find_package(OpenCV REQUIRED)
 
-# ========== ONNX Runtime ==========
+# ONNX Runtime is bundled locally instead of installed system-wide, so we locate
+# it through an environment variable to avoid hard-coding host-specific paths.
 if(NOT DEFINED ENV{ONNXRUNTIME_DIR})
     message(FATAL_ERROR "Please set ONNXRUNTIME_DIR environment variable")
 endif()
@@ -37,14 +39,16 @@ if(NOT ORT_LIB)
     message(FATAL_ERROR "ONNX Runtime library not found: ${ORT_LIB_DIR}")
 endif()
 
-# ========== Common includes ==========
+# Collect shared include directories once so every target uses the same
+# OpenCV, ONNX Runtime and project header paths, reducing duplication.
 set(COMMON_INCLUDES
     ${OpenCV_INCLUDE_DIRS}
     ${ORT_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# ========== Core library (excludes app main) ==========
+# Build all non-main source as a static library so both the app and the unit
+# tests can link the same pipeline code without defining main() twice.
 file(GLOB_RECURSE CORE_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
@@ -56,12 +60,14 @@ target_link_libraries(opencv_onnx_demo_core PRIVATE
     ${ORT_LIB}
 )
 
-# ========== Application ==========
+# The app executable is intentionally thin: reusable logic lives in the core
+# library and only command-line dispatching remains in main().
 add_executable(app ${CMAKE_CURRENT_SOURCE_DIR}/app/main.cpp)
 target_include_directories(app PRIVATE ${COMMON_INCLUDES})
 target_link_libraries(app PRIVATE opencv_onnx_demo_core)
 
-# ========== Tests ==========
+# Tests are linked against the core library so they exercise the same
+# implementation the app uses, avoiding divergent copies of the code.
 file(GLOB_RECURSE TEST_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
 )
@@ -75,5 +81,6 @@ if(TEST_SRC)
     add_test(NAME opencv_onnx_demo_unit COMMAND unit_tests)
 endif()
 
-# ========== compile_commands ==========
+# Generate compile_commands.json so clangd and other tools can resolve
+# headers accurately after each CMake reconfiguration.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
