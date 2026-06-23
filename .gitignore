@@ -24,3 +24,22 @@ Makefile
 
 # Executable
 main
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+*.log
+pip-log.txt
+requirements.txt.lock
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+.env/
