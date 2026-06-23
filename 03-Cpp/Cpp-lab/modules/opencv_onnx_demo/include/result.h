@@ -22,6 +22,9 @@ struct Detection {
   float y2 = 0.0f;
 };
 
+// Result provides a uniform interface for consuming task-specific outputs.
+// The caller does not need to know whether the underlying task is
+// classification or detection in order to print, visualize or save it.
 class Result {
 public:
   Result(const std::string &model_dir, const PostprocessConfig &postprocess)

@@ -6,6 +6,9 @@ using json = nlohmann::json;
 
 namespace {
 
+// ONNX Runtime element types are represented as enum values. We only expose a
+// small subset in JSON because most vision models use FP32; unknown strings
+// safely fall back to FP32.
 ONNXTensorElementDataType parseType(const std::string &type_str) {
   if (type_str == "float32") {
     return ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
@@ -115,6 +118,9 @@ ModelInfo ModelLoader::load(const std::string &model_dir,
     outputs.push_back(info);
   }
 
+  // Currently only the first input/output preprocess/postprocess block is used.
+  // Multi-input models can still declare all tensors; their preprocessing would
+  // be selected by name in a future extension.
   PreprocessConfig preprocess;
   if (!j["inputs"].empty() && j["inputs"][0].contains("preprocess")) {
     preprocess = parsePreprocess(j["inputs"][0]["preprocess"]);

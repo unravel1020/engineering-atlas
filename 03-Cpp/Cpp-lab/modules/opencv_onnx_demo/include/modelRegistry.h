@@ -9,6 +9,9 @@ struct ModelEntry {
   std::string dir;
 };
 
+// ModelRegistry parses the top-level registry.json and resolves model names to
+// their on-disk directories. It does not touch ONNX files itself, keeping
+// registry loading lightweight and independent of ONNX Runtime.
 class ModelRegistry {
 public:
   static ModelRegistry load(const std::string &registry_path);

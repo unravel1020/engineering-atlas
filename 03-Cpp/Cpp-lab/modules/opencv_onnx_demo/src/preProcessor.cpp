@@ -3,6 +3,8 @@
 #include <opencv2/opencv.hpp>
 
 void PreProcessor::validateConfig(const PreprocessConfig &cfg) const {
+  // Layouts other than NCHW are parsed into metadata but not yet implemented.
+  // Failing early prevents silent shape mismatches with ONNX Runtime.
   if (cfg.layout != "NCHW") {
     throw std::runtime_error("Unsupported preprocess layout: " + cfg.layout);
   }
@@ -18,6 +20,8 @@ cv::Mat PreProcessor::letterbox(const cv::Mat &img, int target_h, int target_w,
                                 const std::vector<uint8_t> &pad_color,
                                 float &scale, int &pad_top, int &pad_bottom,
                                 int &pad_left, int &pad_right) const {
+  // Use the smaller scaling factor so the image fits entirely inside the
+  // target rectangle without distortion. The remaining space is padded evenly.
   float r = std::min(static_cast<float>(target_w) / img.cols,
                      static_cast<float>(target_h) / img.rows);
   scale = r;
@@ -46,6 +50,9 @@ std::vector<float> PreProcessor::mat_to_tensor(const cv::Mat &img,
                                                const PreprocessConfig &cfg,
                                                int &c, int &h, int &w,
                                                PreprocessInfo *info_out) {
+  // TensorInfo is currently unused because all preprocessing parameters are
+  // driven by PreprocessConfig. The parameter is kept to allow per-input
+  // preprocessing and type-aware conversion in the future.
   (void)info;
   validateConfig(cfg);
 
@@ -90,6 +97,8 @@ std::vector<float> PreProcessor::mat_to_tensor(const cv::Mat &img,
     std::vector<cv::Mat> normalized_channels;
     cv::split(resized, normalized_channels);
 
+    // Permit shorter mean/std vectors than the channel count by reusing the
+    // last value, which simplifies configs where only a global mean is needed.
     for (size_t i = 0; i < normalized_channels.size(); ++i) {
       float mean = i < cfg.mean.size() ? cfg.mean[i] : cfg.mean.back();
       float std = i < cfg.std.size() ? cfg.std[i] : cfg.std.back();
@@ -103,6 +112,7 @@ std::vector<float> PreProcessor::mat_to_tensor(const cv::Mat &img,
   w = resized.cols;
   c = resized.channels();
 
+  // Flatten HWC OpenCV Mat into a channel-major vector to match NCHW layout.
   std::vector<cv::Mat> channels;
   cv::split(resized, channels);
 

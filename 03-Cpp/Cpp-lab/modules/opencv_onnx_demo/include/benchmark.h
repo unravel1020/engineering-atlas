@@ -20,6 +20,9 @@ struct BenchmarkResult {
   double throughput_fps = 0.0;
 };
 
+// Benchmark measures end-to-end latency by running a callable repeatedly.
+// Warmup runs are excluded from statistics to reduce cold-start effects such
+// as lazy memory allocation or first-run kernel initialization.
 class Benchmark {
 public:
   Benchmark() = default;

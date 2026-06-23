@@ -11,6 +11,9 @@ Inference::Inference(const ModelInfo &model_info)
 
   session_ = Ort::Session(env_, model_info_.modelPath().c_str(), options_);
 
+  // ONNX session metadata is authoritative: model.json may contain symbolic
+  // shapes such as -1 for batch size, so we synchronize after creating the
+  // session to obtain concrete types and dimensions.
   syncTensorShape();
 }
 
@@ -40,6 +43,8 @@ std::vector<int64_t> Inference::fixInputShape(const std::vector<int64_t> &shape,
                                               int c, int h, int w) const {
   std::vector<int64_t> result = shape;
 
+  // Symbolic or unknown dimensions in the ONNX graph are represented as <= 0.
+  // We replace them with the concrete shape produced by the preprocessor.
   if (result.size() == 4) {
     if (result[0] <= 0) {
       result[0] = 1;
@@ -107,6 +112,9 @@ Inference::runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_ima
 
   std::vector<Ort::Value> input_tensors;
   for (auto &data : input_datas) {
+    // The downloaded YOLOv8 model is exported with FP16 I/O. ONNX Runtime on
+    // CPU still accepts FP16 tensors, so we convert the FP32 preprocessing
+    // output to FP16 only when the model explicitly declares FP16 inputs.
     if (data.type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16) {
       data.values_f16.reserve(data.values_f32.size());
       for (float v : data.values_f32) {
@@ -138,6 +146,9 @@ Inference::runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_ima
     size_t out_size = type_info.GetElementCount();
     auto element_type = type_info.GetElementType();
 
+    // Internal pipeline code works in FP32, so FP16 outputs are converted back
+    // immediately after inference. This keeps post-processing independent of
+    // the model's I/O precision.
     if (element_type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16) {
       Ort::Float16_t *out = output_values[i].GetTensorMutableData<Ort::Float16_t>();
       std::vector<float> out_f32(out_size);

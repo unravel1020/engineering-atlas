@@ -10,6 +10,8 @@ ModelRegistry::ModelRegistry(
     : base_dir_(std::move(base_dir)), models_(std::move(models)) {}
 
 ModelRegistry ModelRegistry::load(const std::string &registry_path) {
+  // Derive the registry base directory so that relative model directories are
+  // resolved correctly regardless of the current working directory.
   size_t last_slash = registry_path.find_last_of("/\\");
   std::string base_dir =
       (last_slash == std::string::npos) ? "." : registry_path.substr(0, last_slash);

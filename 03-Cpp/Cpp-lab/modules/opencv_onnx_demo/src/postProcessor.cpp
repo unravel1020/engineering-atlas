@@ -40,6 +40,8 @@ std::vector<std::string> loadLabels(const std::string &path) {
 std::vector<float> softmax(const std::vector<float> &logits) {
   std::vector<float> probs(logits.size());
 
+  // Subtract the max logit before exp() to avoid numerical overflow when
+  // logits have large magnitude.
   float maxValue = *std::max_element(logits.begin(), logits.end());
 
   float sum = 0.0f;
@@ -62,7 +64,8 @@ ClassificationResult classify(const std::vector<float> &output,
   std::vector<int> indices = topk(probs, cfg.topk);
   std::vector<std::string> labels = loadLabels(model_dir + "/" + cfg.labels_file);
 
-  // 防御 labels 文件行数不足导致的越界访问
+  // Avoid out-of-bounds access when the labels file has fewer lines than the
+  // model output classes; missing labels are rendered as empty strings.
   while (labels.size() < output.size()) {
     labels.emplace_back();
   }
@@ -72,11 +75,6 @@ ClassificationResult classify(const std::vector<float> &output,
 }
 
 namespace {
-
-struct Candidate {
-  int index;
-  float confidence;
-};
 
 float computeIoU(const Detection &a, const Detection &b) {
   float x1 = std::max(a.x1, b.x1);
@@ -113,6 +111,7 @@ DetectionResult detect(const std::vector<float> &output,
   const int total_channels = 4 + num_classes;
 
   if (output.size() == static_cast<size_t>(total_channels * num_candidates)) {
+    // N_C_K layout: channel c starts at offset c * num_candidates.
     for (int i = 0; i < num_candidates; ++i) {
       float x = output[i];
       float y = output[num_candidates + i];
@@ -134,7 +133,9 @@ DetectionResult detect(const std::vector<float> &output,
         continue;
       }
 
-      // box format -> xyxy in model input coordinate system
+      // Convert from the model's declared box format to xyxy in the model
+      // input coordinate system. Detection postprocess always works in xyxy
+      // because mapping back to the original image is then just a scale shift.
       float x1_model = x;
       float y1_model = y;
       float x2_model = w;
@@ -146,14 +147,16 @@ DetectionResult detect(const std::vector<float> &output,
         y2_model = y + h / 2.0f;
       }
 
-      // map back to original image
+      // Letterbox adds padding before resizing, so undo the padding first and
+      // then divide by the letterbox scale to recover original-image coords.
       float scale = preprocess_info.scale;
       float x1 = (x1_model - preprocess_info.pad_left) / scale;
       float y1 = (y1_model - preprocess_info.pad_top) / scale;
       float x2 = (x2_model - preprocess_info.pad_left) / scale;
       float y2 = (y2_model - preprocess_info.pad_top) / scale;
 
-      // clip to original image bounds
+      // Clip to original image bounds so downstream visualization does not draw
+      // outside the source image when the model predicts a slightly oversized box.
       x1 = std::max(0.0f, std::min(x1, static_cast<float>(preprocess_info.orig_w)));
       y1 = std::max(0.0f, std::min(y1, static_cast<float>(preprocess_info.orig_h)));
       x2 = std::max(0.0f, std::min(x2, static_cast<float>(preprocess_info.orig_w)));
@@ -169,7 +172,8 @@ DetectionResult detect(const std::vector<float> &output,
       detections.push_back(det);
     }
 
-    // NMS
+    // Greedy NMS: keep the highest-confidence box and suppress any overlapping
+    // box with IoU above the configured threshold to remove duplicate detections.
     std::sort(detections.begin(), detections.end(),
               [](const Detection &a, const Detection &b) {
                 return a.confidence > b.confidence;

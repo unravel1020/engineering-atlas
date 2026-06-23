@@ -9,6 +9,9 @@
 
 namespace pipeline {
 
+// Pipeline abstracts the full inference lifecycle (preprocess → inference →
+// postprocess) behind a single run() call. Task-specific subclasses hide the
+// details of which output tensor name to read and which postprocessor to use.
 class Pipeline {
 public:
   Pipeline(std::shared_ptr<Inference> inference)
@@ -40,6 +43,8 @@ public:
   std::unique_ptr<result::Result> run(const cv::Mat &img) override;
 };
 
+// PipelineFactory keeps the task-to-pipeline mapping in one place so that
+// main.cpp does not need to branch on task strings.
 class PipelineFactory {
 public:
   static std::unique_ptr<Pipeline> create(

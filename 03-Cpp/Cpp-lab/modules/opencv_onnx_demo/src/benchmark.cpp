@@ -7,6 +7,9 @@ namespace benchmark {
 
 namespace {
 
+// Linear interpolation between the two closest ranks. This matches the common
+// definition of percentile used by load-testing tools and avoids bias from
+// always rounding down to the nearest sample.
 double percentile(const std::vector<double> &sorted_ms, double p) {
   if (sorted_ms.empty()) {
     return 0.0;
@@ -66,6 +69,8 @@ BenchmarkResult benchmarkPipeline(pipeline::Pipeline &pipe, const cv::Mat &img,
   bench.setWarmup(warmup);
   bench.setRuns(runs);
   return bench.run([&]() {
+    // Materialize the result to ensure post-processing is included in the
+    // measured latency, not just raw inference.
     auto result = pipe.run(img);
     (void)result;
   });

@@ -6,6 +6,9 @@
 #include <string>
 #include <unordered_map>
 
+// ModelManager is a factory and cache for Inference sessions. It loads models
+// lazily from the registry so that only the models actually used are bound
+// into ONNX Runtime memory.
 class ModelManager {
 public:
   explicit ModelManager(const std::string &registry_path);

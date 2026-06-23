@@ -16,6 +16,8 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  // The registry is the single source of truth for which models exist and what
+  // task each one performs. The manager loads sessions lazily as they are used.
   ModelManager manager("models/registry.json");
 
   for (const auto &model_name : manager.modelNames()) {

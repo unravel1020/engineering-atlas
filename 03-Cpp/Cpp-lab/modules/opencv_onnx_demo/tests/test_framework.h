@@ -10,6 +10,9 @@
 
 namespace test {
 
+// Lightweight self-contained test framework. It avoids an external dependency
+// because the build environment may not have network access to download GTest
+// or Catch2.
 struct TestCase {
   std::string name;
   std::function<void()> fn;
@@ -49,6 +52,7 @@ inline int runAll() {
 
 } // namespace test
 
+// Defines a test case and registers it automatically via a global object.
 #define TEST(name)                                                             \
   static void test_##name();                                                   \
   static ::test::Registrar g_test_registrar_##name(#name, test_##name);        \

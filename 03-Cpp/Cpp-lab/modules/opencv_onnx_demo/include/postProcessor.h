@@ -23,6 +23,10 @@ ClassificationResult classify(const std::vector<float> &output,
                               const PostprocessConfig &cfg,
                               const std::string &model_dir);
 
+// detect() expects the model output in N_C_K layout (batch x channels x
+// candidates), which is the default YOLOv8 ONNX export format. The actual
+// number of classes and candidates are read from PostprocessConfig so that
+// the same function can adapt to different detection models.
 DetectionResult detect(const std::vector<float> &output,
                        const PostprocessConfig &cfg,
                        const std::string &model_dir,
