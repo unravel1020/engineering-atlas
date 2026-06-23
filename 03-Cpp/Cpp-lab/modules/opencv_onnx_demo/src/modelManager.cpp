@@ -10,6 +10,8 @@ std::shared_ptr<Inference> ModelManager::load(const std::string &name) {
     throw std::runtime_error("Model not found in registry: " + name);
   }
 
+  // Reuse the existing session so ONNX Runtime does not allocate duplicate
+  // memory for models that are referenced multiple times.
   auto it = models_.find(name);
   if (it != models_.end()) {
     return it->second;

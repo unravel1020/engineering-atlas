@@ -5,6 +5,8 @@
 #include <string>
 #include <vector>
 
+// Tensor metadata is parsed from model.json and then synchronized against the
+// actual ONNX session to support dynamic dimensions (e.g. batch size -1).
 struct TensorInfo {
   std::string name;
 
@@ -13,6 +15,8 @@ struct TensorInfo {
   ONNXTensorElementDataType type;
 };
 
+// PreprocessConfig drives image preprocessing entirely from model metadata.
+// Keeping all knobs in JSON avoids hard-coding task-specific defaults in code.
 struct PreprocessConfig {
   std::string color_format = "BGR";
 
@@ -33,6 +37,9 @@ struct PreprocessConfig {
   std::vector<uint8_t> pad_color = {114, 114, 114};
 };
 
+// PreprocessInfo records the geometric transform applied to the original image
+// so that detection postprocess can map model-output boxes back to original
+// image coordinates.
 struct PreprocessInfo {
   int orig_h = 0;
 
@@ -55,6 +62,9 @@ struct PreprocessInfo {
   std::string resize_mode;
 };
 
+// PostprocessConfig is intentionally metadata-driven: the same detect() code
+// can serve different detection models by varying num_classes, num_candidates,
+// box_format and output_layout instead of hard-coding YOLOv8 constants.
 struct PostprocessConfig {
   std::string activation = "softmax";
 
@@ -66,7 +76,8 @@ struct PostprocessConfig {
 
   float nms_threshold = 0.45f;
 
-  // Detection-specific metadata
+  // Detection-specific metadata: these knobs are grouped here so the same
+  // PostprocessConfig struct can serve both classification and detection.
   int num_classes = 80;
 
   int num_candidates = 8400;
@@ -76,6 +87,9 @@ struct PostprocessConfig {
   std::string output_layout = "N_C_K"; // N_C_K: e.g. 1 x 84 x 8400
 };
 
+// ModelInfo is the central value object produced by ModelLoader and consumed
+// by Inference, Pipeline and post-processing. It deliberately separates JSON
+// configuration from runtime state such as the ONNX session.
 class ModelInfo {
 public:
   ModelInfo() = default;
