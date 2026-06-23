@@ -37,26 +37,43 @@ if(NOT ORT_LIB)
     message(FATAL_ERROR "ONNX Runtime library not found: ${ORT_LIB_DIR}")
 endif()
 
-# ========== Source ==========
-file(GLOB_RECURSE SRC
-    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/app/*.cpp
-)
-
-add_executable(app ${SRC})
-
-# ========== Include ==========
-target_include_directories(app PRIVATE
+# ========== Common includes ==========
+set(COMMON_INCLUDES
     ${OpenCV_INCLUDE_DIRS}
     ${ORT_INCLUDE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# ========== Link ==========
-target_link_libraries(app PRIVATE
+# ========== Core library (excludes app main) ==========
+file(GLOB_RECURSE CORE_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
+)
+
+add_library(opencv_onnx_demo_core STATIC ${CORE_SRC})
+target_include_directories(opencv_onnx_demo_core PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(opencv_onnx_demo_core PRIVATE
     ${OpenCV_LIBS}
     ${ORT_LIB}
 )
+
+# ========== Application ==========
+add_executable(app ${CMAKE_CURRENT_SOURCE_DIR}/app/main.cpp)
+target_include_directories(app PRIVATE ${COMMON_INCLUDES})
+target_link_libraries(app PRIVATE opencv_onnx_demo_core)
+
+# ========== Tests ==========
+file(GLOB_RECURSE TEST_SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp
+)
+
+if(TEST_SRC)
+    add_executable(unit_tests ${TEST_SRC})
+    target_include_directories(unit_tests PRIVATE ${COMMON_INCLUDES})
+    target_link_libraries(unit_tests PRIVATE opencv_onnx_demo_core)
+
+    enable_testing()
+    add_test(NAME opencv_onnx_demo_unit COMMAND unit_tests)
+endif()
 
 # ========== compile_commands ==========
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)

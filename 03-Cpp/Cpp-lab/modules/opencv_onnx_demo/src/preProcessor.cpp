@@ -3,7 +3,7 @@
 #include <opencv2/opencv.hpp>
 
 void PreProcessor::validateConfig(const PreprocessConfig &cfg) const {
-  if (cfg.layout != "NCHW" && cfg.layout != "NHWC") {
+  if (cfg.layout != "NCHW") {
     throw std::runtime_error("Unsupported preprocess layout: " + cfg.layout);
   }
   if (cfg.resize_mode != "stretch" && cfg.resize_mode != "letterbox") {
