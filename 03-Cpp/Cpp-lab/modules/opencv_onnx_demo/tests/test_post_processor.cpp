@@ -30,11 +30,11 @@ TEST(post_processor_detect_yolo_format) {
   const int num_candidates = 1;
   const int num_classes = 80;
   std::vector<float> output((4 + num_classes) * num_candidates, 0.0f);
-  output[0] = 320.0f; // x
-  output[1] = 320.0f; // y
-  output[2] = 160.0f; // w
-  output[3] = 160.0f; // h
-  output[4 + 5] = 0.9f; // class 5
+  output[0] = 320.0f;
+  output[1] = 320.0f;
+  output[2] = 160.0f;
+  output[3] = 160.0f;
+  output[4 + 5] = 0.9f;
 
   PostprocessConfig cfg;
   cfg.conf_threshold = 0.25f;
@@ -67,16 +67,16 @@ TEST(post_processor_detect_nms_removes_duplicates) {
   std::vector<float> output((4 + num_classes) * num_candidates, 0.0f);
   // Two nearly identical boxes, both class 0, high score
   // Layout N_C_K: channel c at offset c * num_candidates
-  output[0 * num_candidates + 0] = 320.0f; // cand0 x
-  output[0 * num_candidates + 1] = 322.0f; // cand1 x
-  output[1 * num_candidates + 0] = 320.0f; // cand0 y
-  output[1 * num_candidates + 1] = 322.0f; // cand1 y
-  output[2 * num_candidates + 0] = 160.0f; // cand0 w
-  output[2 * num_candidates + 1] = 160.0f; // cand1 w
-  output[3 * num_candidates + 0] = 160.0f; // cand0 h
-  output[3 * num_candidates + 1] = 160.0f; // cand1 h
-  output[(4 + 0) * num_candidates + 0] = 0.9f; // cand0 class 0
-  output[(4 + 0) * num_candidates + 1] = 0.8f; // cand1 class 0
+  output[0 * num_candidates + 0] = 320.0f;
+  output[0 * num_candidates + 1] = 322.0f;
+  output[1 * num_candidates + 0] = 320.0f;
+  output[1 * num_candidates + 1] = 322.0f;
+  output[2 * num_candidates + 0] = 160.0f;
+  output[2 * num_candidates + 1] = 160.0f;
+  output[3 * num_candidates + 0] = 160.0f;
+  output[3 * num_candidates + 1] = 160.0f;
+  output[(4 + 0) * num_candidates + 0] = 0.9f;
+  output[(4 + 0) * num_candidates + 1] = 0.8f;
 
   PostprocessConfig cfg;
   cfg.conf_threshold = 0.25f;
