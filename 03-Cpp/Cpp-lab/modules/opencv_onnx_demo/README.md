@@ -101,13 +101,15 @@ cmake --build build -j
 ./build/unit_tests
 ```
 
-当前包含 20 个测试，覆盖：
+当前包含 39 个测试，覆盖：
 
-- `PreProcessor`：stretch / letterbox、scale / mean / std、异常参数
-- `PostProcessor`：softmax、topk、YOLO 检测输出解析、NMS
+- `PreProcessor`：stretch / letterbox、scale / mean / std、RGB/BGR、异常参数
+- `PostProcessor`：softmax、topk、YOLO 检测输出解析、NMS、边界场景
 - `PipelineFactory`：分类 / 检测管道创建、未知任务拒绝
 - `ModelLoader` / `ModelRegistry` / `ModelManager`：元数据加载与异常路径
+- `Result`：分类 / 检测结果的 print 与 visualize
 - `Benchmark`：统计计算正确性
+- 端到端集成测试：SqueezeNet 分类、YOLOv8n 检测
 
 ---
 
