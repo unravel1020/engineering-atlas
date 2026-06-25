@@ -38,6 +38,10 @@ std::vector<std::string> loadLabels(const std::string &path) {
 }
 
 std::vector<float> softmax(const std::vector<float> &logits) {
+  if (logits.empty()) {
+    return {};
+  }
+
   std::vector<float> probs(logits.size());
 
   // Subtract the max logit before exp() to avoid numerical overflow when

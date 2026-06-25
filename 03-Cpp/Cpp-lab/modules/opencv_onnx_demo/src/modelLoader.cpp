@@ -94,10 +94,26 @@ PostprocessConfig parsePostprocess(const json &j) {
 
 ModelInfo ModelLoader::load(const std::string &model_dir,
                             const std::string &model_name) {
-  std::ifstream ifs(model_dir + "/model.json");
+  std::string config_path = model_dir + "/model.json";
+  std::ifstream ifs(config_path);
+  if (!ifs.is_open()) {
+    throw std::runtime_error("model.json not found: " + config_path);
+  }
 
   json j;
-  ifs >> j;
+  try {
+    ifs >> j;
+  } catch (const std::exception &e) {
+    throw std::runtime_error(std::string("failed to parse model.json: ") +
+                             e.what());
+  }
+
+  if (!j.contains("inputs") || !j["inputs"].is_array()) {
+    throw std::runtime_error("model.json must contain an 'inputs' array");
+  }
+  if (!j.contains("outputs") || !j["outputs"].is_array()) {
+    throw std::runtime_error("model.json must contain an 'outputs' array");
+  }
 
   std::string model_file = j.value("model_file", "model.onnx");
   std::string task = j.value("task", "unknown");
@@ -105,7 +121,7 @@ ModelInfo ModelLoader::load(const std::string &model_dir,
   std::vector<TensorInfo> inputs;
   for (const auto &input : j["inputs"]) {
     TensorInfo info;
-    info.name = input["name"];
+    info.name = input.value("name", "");
     info.type = parseType(input.value("type", "float32"));
     inputs.push_back(info);
   }
@@ -113,7 +129,7 @@ ModelInfo ModelLoader::load(const std::string &model_dir,
   std::vector<TensorInfo> outputs;
   for (const auto &output : j["outputs"]) {
     TensorInfo info;
-    info.name = output["name"];
+    info.name = output.value("name", "");
     info.type = parseType(output.value("type", "float32"));
     outputs.push_back(info);
   }
