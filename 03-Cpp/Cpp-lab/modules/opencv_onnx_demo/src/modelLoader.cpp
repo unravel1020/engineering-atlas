@@ -1,6 +1,6 @@
 #include "modelLoader.h"
 #include "json/json.hpp"
-#include <fstream>
+#include "utils.h"
 
 using json = nlohmann::json;
 
@@ -94,15 +94,18 @@ PostprocessConfig parsePostprocess(const json &j) {
 
 ModelInfo ModelLoader::load(const std::string &model_dir,
                             const std::string &model_name) {
-  std::string config_path = model_dir + "/model.json";
-  std::ifstream ifs(config_path);
-  if (!ifs.is_open()) {
-    throw std::runtime_error("model.json not found: " + config_path);
+  std::string config_path = utils::joinPath(model_dir, "model.json");
+  std::string text;
+  try {
+    text = utils::readTextFile(config_path);
+  } catch (const std::exception &e) {
+    throw std::runtime_error(std::string("failed to load model config: ") +
+                             e.what());
   }
 
   json j;
   try {
-    ifs >> j;
+    j = json::parse(text);
   } catch (const std::exception &e) {
     throw std::runtime_error(std::string("failed to parse model.json: ") +
                              e.what());

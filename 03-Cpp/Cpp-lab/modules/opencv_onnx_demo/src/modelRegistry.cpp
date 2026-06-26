@@ -1,6 +1,6 @@
 #include "modelRegistry.h"
 #include "json/json.hpp"
-#include <fstream>
+#include "utils.h"
 
 using json = nlohmann::json;
 
@@ -16,10 +16,25 @@ ModelRegistry ModelRegistry::load(const std::string &registry_path) {
   std::string base_dir =
       (last_slash == std::string::npos) ? "." : registry_path.substr(0, last_slash);
 
-  std::ifstream ifs(registry_path);
+  std::string text;
+  try {
+    text = utils::readTextFile(registry_path);
+  } catch (const std::exception &e) {
+    throw std::runtime_error(std::string("failed to load registry: ") +
+                             e.what());
+  }
 
   json j;
-  ifs >> j;
+  try {
+    j = json::parse(text);
+  } catch (const std::exception &e) {
+    throw std::runtime_error(std::string("failed to parse registry: ") +
+                             e.what());
+  }
+
+  if (!j.contains("models") || !j["models"].is_object()) {
+    throw std::runtime_error("registry must contain a 'models' object");
+  }
 
   std::unordered_map<std::string, ModelEntry> models;
   for (auto it = j["models"].begin(); it != j["models"].end(); ++it) {
@@ -45,7 +60,7 @@ std::string ModelRegistry::modelDir(const std::string &name) const {
   if (it == models_.end()) {
     return "";
   }
-  return base_dir_ + "/" + it->second.dir;
+  return utils::joinPath(base_dir_, it->second.dir);
 }
 
 std::string ModelRegistry::task(const std::string &name) const {

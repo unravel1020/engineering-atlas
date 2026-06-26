@@ -1,23 +1,10 @@
 #include "result.h"
-#include <fstream>
 #include <iomanip>
 #include <numeric>
 
 namespace result {
 
-namespace {
 
-std::vector<std::string> loadLabels(const std::string &path) {
-  std::ifstream ifs(path);
-  std::vector<std::string> labels;
-  std::string line;
-  while (std::getline(ifs, line)) {
-    labels.push_back(line);
-  }
-  return labels;
-}
-
-} // namespace
 
 void ClassificationResult::print(std::ostream &os) const {
   os << "Top-" << postprocess_.topk << " indices:\n";

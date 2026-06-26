@@ -1,8 +1,8 @@
 #include "postProcessor.h"
+#include "utils.h"
 #include <algorithm>
 #include <cmath>
 #include <cstddef>
-#include <fstream>
 #include <numeric>
 #include <vector>
 
@@ -23,19 +23,7 @@ std::vector<int> topk(const std::vector<float> &data, int k) {
   return idx;
 }
 
-std::vector<std::string> loadLabels(const std::string &path) {
-  std::ifstream ifs(path);
 
-  std::vector<std::string> labels;
-
-  std::string line;
-
-  while (std::getline(ifs, line)) {
-    labels.push_back(line);
-  }
-
-  return labels;
-}
 
 std::vector<float> softmax(const std::vector<float> &logits) {
   if (logits.empty()) {
@@ -66,7 +54,7 @@ ClassificationResult classify(const std::vector<float> &output,
                               const std::string &model_dir) {
   std::vector<float> probs = softmax(output);
   std::vector<int> indices = topk(probs, cfg.topk);
-  std::vector<std::string> labels = loadLabels(model_dir + "/" + cfg.labels_file);
+  std::vector<std::string> labels = utils::loadLabels(utils::joinPath(model_dir, cfg.labels_file));
 
   // Avoid out-of-bounds access when the labels file has fewer lines than the
   // model output classes; missing labels are rendered as empty strings.
@@ -206,7 +194,7 @@ DetectionResult detect(const std::vector<float> &output,
     detections = std::move(nms_result);
   }
 
-  std::vector<std::string> labels = loadLabels(model_dir + "/" + cfg.labels_file);
+  std::vector<std::string> labels = utils::loadLabels(utils::joinPath(model_dir, cfg.labels_file));
   return DetectionResult(model_dir, cfg, std::move(labels),
                          std::move(detections));
 }
