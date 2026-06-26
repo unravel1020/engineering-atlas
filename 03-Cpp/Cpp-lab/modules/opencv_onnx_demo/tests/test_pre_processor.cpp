@@ -40,7 +40,7 @@ TEST(pre_processor_letterbox_preserves_aspect_ratio) {
   ASSERT_EQ(w, 64);
   ASSERT_EQ(preprocess_info.orig_h, 100);
   ASSERT_EQ(preprocess_info.orig_w, 200);
-  ASSERT_TRUE(preprocess_info.scale < 1.0f);
+  ASSERT_LT(preprocess_info.scale, 1.0f);
   ASSERT_TRUE(preprocess_info.pad_top > 0 || preprocess_info.pad_bottom > 0);
   ASSERT_EQ(tensor.size(), 3u * 64 * 64);
 }

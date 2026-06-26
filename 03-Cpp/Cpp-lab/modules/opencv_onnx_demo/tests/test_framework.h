@@ -79,6 +79,56 @@ inline int runAll() {
     }                                                                          \
   } while (0)
 
+#define ASSERT_NE(a, b)                                                        \
+  do {                                                                         \
+    if ((a) == (b)) {                                                          \
+      std::ostringstream oss;                                                  \
+      oss << "ASSERT_NE failed: " << #a << " == " << #b << " at line "        \
+          << __LINE__;                                                         \
+      throw std::runtime_error(oss.str());                                     \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_GT(a, b)                                                        \
+  do {                                                                         \
+    if (!((a) > (b))) {                                                        \
+      std::ostringstream oss;                                                  \
+      oss << "ASSERT_GT failed: " << #a << " <= " << #b << " at line "        \
+          << __LINE__;                                                         \
+      throw std::runtime_error(oss.str());                                     \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_LT(a, b)                                                        \
+  do {                                                                         \
+    if (!((a) < (b))) {                                                        \
+      std::ostringstream oss;                                                  \
+      oss << "ASSERT_LT failed: " << #a << " >= " << #b << " at line "        \
+          << __LINE__;                                                         \
+      throw std::runtime_error(oss.str());                                     \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_GE(a, b)                                                        \
+  do {                                                                         \
+    if (!((a) >= (b))) {                                                       \
+      std::ostringstream oss;                                                  \
+      oss << "ASSERT_GE failed: " << #a << " < " << #b << " at line "         \
+          << __LINE__;                                                         \
+      throw std::runtime_error(oss.str());                                     \
+    }                                                                          \
+  } while (0)
+
+#define ASSERT_LE(a, b)                                                        \
+  do {                                                                         \
+    if (!((a) <= (b))) {                                                       \
+      std::ostringstream oss;                                                  \
+      oss << "ASSERT_LE failed: " << #a << " > " << #b << " at line "         \
+          << __LINE__;                                                         \
+      throw std::runtime_error(oss.str());                                     \
+    }                                                                          \
+  } while (0)
+
 #define ASSERT_NEAR(a, b, eps)                                                 \
   do {                                                                         \
     if (std::abs((a) - (b)) > (eps)) {                                         \
