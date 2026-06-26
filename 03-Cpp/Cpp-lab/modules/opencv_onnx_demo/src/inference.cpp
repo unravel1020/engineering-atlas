@@ -2,12 +2,18 @@
 #include "logger.h"
 #include "preProcessor.h"
 #include "utils.h"
+#include <filesystem>
 #include <stdexcept>
 
 Inference::Inference(const ModelInfo &model_info)
     : env_(ORT_LOGGING_LEVEL_WARNING, "demo"), session_(nullptr),
       options_(), model_info_(model_info) {
   options_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
+
+  if (!std::filesystem::exists(model_info_.modelPath())) {
+    throw std::runtime_error("ONNX model file not found: " +
+                             model_info_.modelPath());
+  }
 
   LOG_INFO("Loading ONNX model: " + model_info_.modelPath());
   session_ = Ort::Session(env_, model_info_.modelPath().c_str(), options_);
@@ -84,6 +90,9 @@ Inference::runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_ima
     if (it == input_images.end()) {
       throw std::runtime_error("Missing input tensor: " + info.name);
     }
+    if (it->second.empty()) {
+      throw std::runtime_error("Empty input image for tensor: " + info.name);
+    }
 
     int c, h, w;
     InputData data;
@@ -158,9 +167,12 @@ Inference::runWithInfo(const std::unordered_map<std::string, cv::Mat> &input_ima
         out_f32[j] = static_cast<float>(out[j]);
       }
       outputs[name] = std::move(out_f32);
-    } else {
+    } else if (element_type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT) {
       float *out = output_values[i].GetTensorMutableData<float>();
       outputs[name] = std::vector<float>(out, out + out_size);
+    } else {
+      throw std::runtime_error("Unsupported output element type for tensor '" +
+                               name + "'");
     }
   }
 
@@ -182,7 +194,12 @@ Inference::run(const std::unordered_map<std::string, cv::Mat> &input_images) {
 
 std::vector<float> Inference::run(const cv::Mat &img) {
   auto result = runWithInfo(img);
-  return result.outputs[model_info_.outputs()[0].name];
+  const std::string &name = model_info_.outputs()[0].name;
+  auto it = result.outputs.find(name);
+  if (it == result.outputs.end()) {
+    throw std::runtime_error("Missing output tensor: " + name);
+  }
+  return it->second;
 }
 
 void Inference::printModelInfo() const { model_info_.print(); }
