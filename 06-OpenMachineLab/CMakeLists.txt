@@ -47,10 +47,23 @@ set(COMMON_INCLUDES
 file(GLOB_RECURSE OML_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp
 )
+# Demo and tool entry points have their own executables; do not link them into
+# the core static library where they would conflict with test mains.
+list(FILTER OML_SRC EXCLUDE REGEX "/src/(demo|tools)/")
 
 add_library(oml_core STATIC ${OML_SRC})
 target_include_directories(oml_core PRIVATE ${COMMON_INCLUDES})
 target_link_libraries(oml_core PRIVATE
+    ${OpenCV_LIBS}
+    ${ORT_LIB}
+)
+
+# Demo executable
+add_executable(oml_demo ${CMAKE_CURRENT_SOURCE_DIR}/src/demo/oml_demo.cpp)
+target_include_directories(oml_demo PRIVATE ${COMMON_INCLUDES})
+# Link the whole static library so backend static registrars are not dropped.
+target_link_libraries(oml_demo PRIVATE
+    -Wl,--whole-archive oml_core -Wl,--no-whole-archive
     ${OpenCV_LIBS}
     ${ORT_LIB}
 )
@@ -63,7 +76,12 @@ file(GLOB_RECURSE TEST_SRC
 if(TEST_SRC)
     add_executable(oml_tests ${TEST_SRC})
     target_include_directories(oml_tests PRIVATE ${COMMON_INCLUDES})
-    target_link_libraries(oml_tests PRIVATE oml_core)
+    # Link the whole static library so backend static registrars are included.
+    target_link_libraries(oml_tests PRIVATE
+        -Wl,--whole-archive oml_core -Wl,--no-whole-archive
+        ${OpenCV_LIBS}
+        ${ORT_LIB}
+    )
 
     enable_testing()
     add_test(NAME oml_unit COMMAND oml_tests)
