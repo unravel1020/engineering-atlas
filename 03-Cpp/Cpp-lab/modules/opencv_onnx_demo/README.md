@@ -101,12 +101,13 @@ cmake --build build -j
 ./build/unit_tests
 ```
 
-当前包含 48 个测试，覆盖：
+当前包含 52 个测试，覆盖：
 
 - `PreProcessor`：stretch / letterbox、scale / mean / std、RGB/BGR、异常参数
 - `PostProcessor`：softmax、topk、YOLO 检测输出解析、NMS、边界场景
 - `PipelineFactory`：分类 / 检测管道创建、未知任务拒绝
 - `ModelLoader` / `ModelRegistry` / `ModelManager`：元数据加载与异常路径
+- `Inference`：模型文件缺失、空输入、输出存在性、FP16/FP32 输出
 - `Result`：分类 / 检测结果的 print 与 visualize
 - `Benchmark`：统计计算正确性
 - `Utils`：文件读取、标签加载、路径拼接
