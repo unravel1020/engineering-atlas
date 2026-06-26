@@ -128,8 +128,13 @@ ONNXModelSession::run(const std::unordered_map<std::string, std::vector<float>> 
       Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
   Ort::AllocatorWithDefaultOptions allocator;
 
+  // CreateTensor borrows pointers, so these buffers must stay alive until
+  // Run() returns. Keep them as local vectors so concurrent run() calls do
+  // not share mutable state.
   std::vector<std::vector<float>> mutable_inputs;
+  std::vector<std::vector<Ort::Float16_t>> mutable_inputs_f16;
   mutable_inputs.reserve(input_infos_.size());
+  mutable_inputs_f16.reserve(input_infos_.size());
   std::vector<Ort::Value> input_tensors;
   std::vector<const char *> input_names;
   input_tensors.reserve(input_infos_.size());
@@ -158,11 +163,23 @@ ONNXModelSession::run(const std::unordered_map<std::string, std::vector<float>> 
     }
 
     // CreateTensor borrows the pointer, so we keep the mutable buffer alive
-    // until Run() returns.
-    mutable_inputs.push_back(it->second);
-    input_tensors.push_back(Ort::Value::CreateTensor<float>(
-        memory_info, mutable_inputs.back().data(), mutable_inputs.back().size(),
-        shape.data(), shape.size()));
+    // until Run() returns. Convert to FP16 if the model declares FP16 inputs.
+    if (info.dtype == "float16") {
+      std::vector<Ort::Float16_t> f16_input;
+      f16_input.reserve(it->second.size());
+      for (float v : it->second) {
+        f16_input.emplace_back(v);
+      }
+      mutable_inputs_f16.push_back(std::move(f16_input));
+      input_tensors.push_back(Ort::Value::CreateTensor<Ort::Float16_t>(
+          memory_info, mutable_inputs_f16.back().data(),
+          mutable_inputs_f16.back().size(), shape.data(), shape.size()));
+    } else {
+      mutable_inputs.push_back(it->second);
+      input_tensors.push_back(Ort::Value::CreateTensor<float>(
+          memory_info, mutable_inputs.back().data(),
+          mutable_inputs.back().size(), shape.data(), shape.size()));
+    }
     input_names.push_back(info.name.c_str());
   }
 
