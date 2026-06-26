@@ -1,4 +1,6 @@
 #include "pipeline/StagedPipeline.h"
+#include "pipeline/TimingStage.h"
+#include "utils/Timer.h"
 #include <stdexcept>
 
 namespace oml {
@@ -14,6 +16,9 @@ void StagedPipeline::addStage(PipelineStagePtr stage) {
   }
   if (running_) {
     throw std::runtime_error("Cannot add stages after pipeline has started");
+  }
+  if (profiling_enabled_) {
+    stage = std::make_shared<TimingStage>(stage->name(), std::move(stage));
   }
   stages_.push_back(std::move(stage));
 }
@@ -65,6 +70,9 @@ void StagedPipeline::submit(FrameDataPtr input) {
   if (!running_) {
     start();
   }
+  if (input && profiling_enabled_) {
+    input->submit_time_us = utils::nowUs();
+  }
   queues_.front()->push(std::move(input));
 }
 
@@ -95,6 +103,9 @@ void StagedPipeline::stop() {
       auto frame = opt.value();
       if (!frame) {
         break;
+      }
+      if (profiling_enabled_) {
+        frame->complete_time_us = utils::nowUs();
       }
       std::lock_guard<std::mutex> lock(results_mutex_);
       results_.push_back(std::move(frame));

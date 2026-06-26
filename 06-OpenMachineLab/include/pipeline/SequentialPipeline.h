@@ -16,10 +16,15 @@ public:
   // Process a single frame synchronously. Returns nullptr if any stage fails.
   FrameDataPtr run(FrameDataPtr input);
 
+  // When enabled, addStage wraps each stage with TimingStage and run() records
+  // submit/complete timestamps. Enable before adding stages.
+  void setProfilingEnabled(bool enabled) { profiling_enabled_ = enabled; }
+
   const std::vector<PipelineStagePtr> &stages() const { return stages_; }
 
 private:
   std::vector<PipelineStagePtr> stages_;
+  bool profiling_enabled_ = false;
 };
 
 } // namespace pipeline

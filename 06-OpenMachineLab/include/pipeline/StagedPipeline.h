@@ -21,6 +21,10 @@ public:
 
   void addStage(PipelineStagePtr stage);
 
+  // When enabled, addStage wraps each stage with TimingStage and workers record
+  // submit/complete timestamps. Enable before adding stages.
+  void setProfilingEnabled(bool enabled) { profiling_enabled_ = enabled; }
+
   // Submit a frame to the input queue. Non-blocking unless the queue is full.
   void submit(FrameDataPtr input);
 
@@ -47,6 +51,7 @@ private:
   std::mutex results_mutex_;
   std::atomic<bool> running_{false};
   std::atomic<bool> stopped_{false};
+  bool profiling_enabled_ = false;
 };
 
 } // namespace pipeline

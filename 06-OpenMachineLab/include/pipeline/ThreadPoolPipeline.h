@@ -22,6 +22,10 @@ public:
   // threads, so they must be thread-safe.
   void addStage(PipelineStagePtr stage);
 
+  // When enabled, profiling is enabled on the inner SequentialPipeline and
+  // submit/runBatch record frame submit/complete timestamps.
+  void setProfilingEnabled(bool enabled);
+
   // Submit a frame for asynchronous processing. Returns a future to the result.
   std::future<FrameDataPtr> submit(FrameDataPtr input);
 
@@ -36,6 +40,7 @@ public:
 private:
   SequentialPipeline pipeline_;
   ThreadPool pool_;
+  bool profiling_enabled_ = false;
 };
 
 } // namespace pipeline

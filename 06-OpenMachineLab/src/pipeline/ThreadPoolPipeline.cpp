@@ -1,4 +1,5 @@
 #include "pipeline/ThreadPoolPipeline.h"
+#include "utils/Timer.h"
 #include <stdexcept>
 
 namespace oml {
@@ -15,9 +16,22 @@ void ThreadPoolPipeline::addStage(PipelineStagePtr stage) {
   pipeline_.addStage(std::move(stage));
 }
 
+void ThreadPoolPipeline::setProfilingEnabled(bool enabled) {
+  profiling_enabled_ = enabled;
+  pipeline_.setProfilingEnabled(enabled);
+}
+
 std::future<FrameDataPtr> ThreadPoolPipeline::submit(FrameDataPtr input) {
-  return pool_.submit(
-      [this, input]() mutable { return pipeline_.run(std::move(input)); });
+  return pool_.submit([this, input]() mutable {
+    if (input && profiling_enabled_) {
+      input->submit_time_us = utils::nowUs();
+    }
+    auto result = pipeline_.run(std::move(input));
+    if (result && profiling_enabled_) {
+      result->complete_time_us = utils::nowUs();
+    }
+    return result;
+  });
 }
 
 std::vector<FrameDataPtr>
