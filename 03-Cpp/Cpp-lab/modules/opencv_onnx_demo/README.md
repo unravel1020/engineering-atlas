@@ -101,7 +101,7 @@ cmake --build build -j
 ./build/unit_tests
 ```
 
-当前包含 44 个测试，覆盖：
+当前包含 48 个测试，覆盖：
 
 - `PreProcessor`：stretch / letterbox、scale / mean / std、RGB/BGR、异常参数
 - `PostProcessor`：softmax、topk、YOLO 检测输出解析、NMS、边界场景
@@ -110,6 +110,7 @@ cmake --build build -j
 - `Result`：分类 / 检测结果的 print 与 visualize
 - `Benchmark`：统计计算正确性
 - `Utils`：文件读取、标签加载、路径拼接
+- `Logger`：分级日志、级别过滤、输出流重定向
 - 端到端集成测试：SqueezeNet 分类、YOLOv8n 检测
 
 ---
@@ -187,6 +188,7 @@ cmake --build build -j
 | `result` | 定义分类 / 检测结果的统一输出与可视化 |
 | `benchmark` | 对 pipeline 进行多次推理并统计 latency |
 | `utils` | 跨模块通用工具：文件读取、标签加载、路径拼接 |
+| `logger` | 分级日志抽象：DEBUG / INFO / WARNING / ERROR，支持输出流重定向 |
 
 ---
 
