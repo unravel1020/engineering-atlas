@@ -12,13 +12,14 @@
 
 ## 当前阶段
 
-已完成第一阶段实现：
+已完成前两阶段实现：
 
 - ✅ 插件化后端接口 + ONNX Runtime CPU 实现
-- ✅ 配置管理 + 生命周期管理骨架
+- ✅ 配置管理 + 生命周期管理（Application）
 - ✅ 同步顺序流水线 + 端到端分类推理
+- ✅ 线程池 + 帧级并发流水线（ThreadPoolPipeline）
 
-当前测试覆盖：backend registry、ONNX backend、ConfigManager、SequentialPipeline 端到端。
+当前测试覆盖：backend registry、ONNX backend、ConfigManager、Application 生命周期、SequentialPipeline 端到端、ThreadPoolPipeline 并行推理。
 
 ## 目录结构
 
