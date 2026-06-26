@@ -1,5 +1,6 @@
 #include "modelLoader.h"
 #include "json/json.hpp"
+#include "logger.h"
 #include "utils.h"
 
 using json = nlohmann::json;
@@ -19,6 +20,8 @@ ONNXTensorElementDataType parseType(const std::string &type_str) {
   if (type_str == "int32") {
     return ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32;
   }
+  LOG_WARNING("Unknown tensor type '" + type_str +
+              "', falling back to float32");
   return ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT;
 }
 

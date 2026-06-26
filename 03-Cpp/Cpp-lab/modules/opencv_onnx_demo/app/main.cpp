@@ -1,4 +1,5 @@
 #include "benchmark.h"
+#include "logger.h"
 #include "modelManager.h"
 #include "pipeline.h"
 #include "result.h"
@@ -25,12 +26,12 @@ int main(int argc, char *argv[]) {
     auto model = manager.current();
     const auto &model_info = model->modelInfo();
 
-    std::cout << "\n========== Model: " << model_name
-              << " | Task: " << model_info.task() << " ==========\n";
+    LOG_INFO("========== Model: " + model_name + " | Task: " +
+             model_info.task() + " ==========");
 
     cv::Mat img = cv::imread(model_info.modelDir() + "/test_data/dog.jpg");
     if (img.empty()) {
-      std::cout << "image not found for " << model_name << "\n";
+      LOG_WARNING("image not found for " + model_name);
       continue;
     }
 
@@ -44,7 +45,7 @@ int main(int argc, char *argv[]) {
       task_result->print(std::cout);
       std::string out_path = "output/" + model_name + "_result.jpg";
       task_result->save(out_path, img);
-      std::cout << "Saved visualization to " << out_path << "\n";
+      LOG_INFO("Saved visualization to " + out_path);
     }
 
     model->printModelInfo();

@@ -1,7 +1,7 @@
 #include "inference.h"
+#include "logger.h"
 #include "preProcessor.h"
 #include "utils.h"
-#include <iostream>
 #include <stdexcept>
 
 Inference::Inference(const ModelInfo &model_info)
@@ -9,7 +9,9 @@ Inference::Inference(const ModelInfo &model_info)
       options_(), model_info_(model_info) {
   options_.SetGraphOptimizationLevel(GraphOptimizationLevel::ORT_ENABLE_ALL);
 
+  LOG_INFO("Loading ONNX model: " + model_info_.modelPath());
   session_ = Ort::Session(env_, model_info_.modelPath().c_str(), options_);
+  LOG_INFO("ONNX model loaded successfully: " + model_info_.modelPath());
 
   // ONNX session metadata is authoritative: model.json may contain symbolic
   // shapes such as -1 for batch size, so we synchronize after creating the

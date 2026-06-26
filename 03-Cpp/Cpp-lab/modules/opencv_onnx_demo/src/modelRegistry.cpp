@@ -1,5 +1,6 @@
 #include "modelRegistry.h"
 #include "json/json.hpp"
+#include "logger.h"
 #include "utils.h"
 
 using json = nlohmann::json;
@@ -41,6 +42,10 @@ ModelRegistry ModelRegistry::load(const std::string &registry_path) {
     ModelEntry entry;
     entry.task = it.value().value("task", "unknown");
     entry.dir = it.value().value("dir", it.key());
+    if (entry.task == "unknown") {
+      LOG_WARNING("Model '" + it.key() +
+                  "' has no task declared, defaulting to 'unknown'");
+    }
     models[it.key()] = entry;
   }
 
