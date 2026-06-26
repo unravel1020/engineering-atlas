@@ -7,19 +7,25 @@
 - 插件化后端（CPU / GPU / TensorRT / ...）
 - 统一的配置管理与生命周期管理
 - 多线程 / 流水线调度能力
+- 非侵入式性能统计与基准测试
 
 ---
 
 ## 当前阶段
 
-已完成前两阶段实现：
+已完成：
 
 - ✅ 插件化后端接口 + ONNX Runtime CPU 实现
+- ✅ TensorRT / GPU 后端占位（注册到后端注册表，待接入 SDK）
 - ✅ 配置管理 + 生命周期管理（Application）
-- ✅ 同步顺序流水线 + 端到端分类推理
-- ✅ 线程池 + 帧级并发流水线（ThreadPoolPipeline）
+- ✅ 同步顺序流水线（SequentialPipeline）
+- ✅ 线程池帧级并发流水线（ThreadPoolPipeline）
+- ✅ 阶段级重叠流水线（StagedPipeline）
+- ✅ 端到端分类 / 检测推理测试
+- ✅ 可运行的图像/视频推理 Demo（oml_demo）
+- ✅ 性能统计：Timer、TimingStage、BenchmarkRunner
 
-当前测试覆盖：backend registry、ONNX backend、ConfigManager、Application 生命周期、SequentialPipeline 端到端、ThreadPoolPipeline 并行推理。
+当前测试覆盖：backend registry、ONNX backend、TensorRT 占位、ConfigManager、Application 生命周期、三种流水线端到端、Timer / TimingStage / Benchmark 统计。
 
 ## 目录结构
 
@@ -28,10 +34,18 @@
 ├── docs/adr/              # 架构决策记录
 ├── include/
 │   ├── backend/           # 后端插件接口
+│   ├── benchmark/         # 基准测试统计
 │   ├── core/              # 配置、生命周期
-│   └── pipeline/          # 流水线调度抽象
-├── src/                   # 实现（待填充）
-├── tests/                 # 测试（待填充）
+│   ├── pipeline/          # 流水线调度抽象
+│   └── utils/             # 工具（Timer 等）
+├── src/                   # 实现
+│   ├── backend/
+│   ├── benchmark/
+│   ├── core/
+│   ├── demo/              # oml_demo 入口
+│   ├── pipeline/
+│   └── utils/
+├── tests/                 # 测试
 └── README.md
 ```
 
@@ -45,11 +59,33 @@ cmake --build build -j
 ./build/oml_tests
 ```
 
+## 运行 Demo
+
+处理单张图片：
+
+```bash
+./build/oml_demo \
+  ../03-Cpp/Cpp-lab/modules/opencv_onnx_demo/models/registry.json \
+  yolov8n \
+  ../03-Cpp/Cpp-lab/modules/opencv_onnx_demo/models/yolov8n/test_data/dog.jpg
+```
+
+处理视频（可选输出到文件）：
+
+```bash
+./build/oml_demo \
+  ../03-Cpp/Cpp-lab/modules/opencv_onnx_demo/models/registry.json \
+  yolov8n \
+  input.mp4 \
+  output.mp4
+```
+
 ## ADR 列表
 
 - `0001-backend-plugin-interface.md`：插件化后端接口
 - `0002-config-and-lifecycle-management.md`：配置与生命周期管理
 - `0003-pipeline-scheduling.md`：流水线调度抽象
+- `0004-benchmark-statistics.md`：性能统计与基准测试
 
 ## 与 opencv_onnx_demo 的关系
 
@@ -58,5 +94,6 @@ cmake --build build -j
 | 任务支持 | classification / detection | 可扩展 |
 | 后端 | ONNX Runtime CPU | 插件化多后端 |
 | 配置 | registry.json + model.json | 全局 + 模型 + 后端三层 |
-| 执行 | 同步串行 | 同步 + 线程池 |
+| 执行 | 同步串行 | 同步 + 线程池 + 阶段重叠 |
+| 性能统计 | 端到端 benchmark | 端到端 + 每阶段 latency |
 | 目标 | 学习 + 原型验证 | 工业级部署 |
