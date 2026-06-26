@@ -56,6 +56,7 @@ bool Application::initialize() {
     backend::BackendConfig cfg;
     cfg.device = "cpu";
     cfg.threads = global.worker_threads;
+    cfg.precision = "fp32";
     if (!backend->initialize(cfg)) {
       throw std::runtime_error("Failed to initialize default backend: " +
                                global.default_backend);
@@ -72,6 +73,8 @@ bool Application::initialize() {
       backend::BackendConfig cfg;
       cfg.device = backend_cfg.device;
       cfg.threads = backend_cfg.threads;
+      cfg.precision = backend_cfg.precision;
+      cfg.cache_dir = backend_cfg.cache_dir;
       if (!backend->initialize(cfg)) {
         throw std::runtime_error("Failed to initialize backend: " +
                                  backend_cfg.name);

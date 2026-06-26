@@ -14,6 +14,10 @@ struct BackendConfig {
   // Common fields
   std::string device = "cpu"; // "cpu", "cuda:0", "tensorrt", etc.
   int threads = 1;
+
+  // Optional backend-specific tuning knobs, parsed from registry.json.
+  std::string precision = "fp32";  // fp32 / fp16 / int8
+  std::string cache_dir;           // engine/cache directory (e.g. TensorRT)
 };
 
 // Abstract interface for all inference backends. The core pipeline depends only
