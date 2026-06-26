@@ -12,7 +12,13 @@
 
 ## 当前阶段
 
-当前处于**架构设计阶段**，目录中以 ADR 和头文件骨架为主，尚未实现完整可运行版本。
+已完成第一阶段实现：
+
+- ✅ 插件化后端接口 + ONNX Runtime CPU 实现
+- ✅ 配置管理 + 生命周期管理骨架
+- ✅ 同步顺序流水线 + 端到端分类推理
+
+当前测试覆盖：backend registry、ONNX backend、ConfigManager、SequentialPipeline 端到端。
 
 ## 目录结构
 
@@ -26,6 +32,16 @@
 ├── src/                   # 实现（待填充）
 ├── tests/                 # 测试（待填充）
 └── README.md
+```
+
+## 构建与测试
+
+```bash
+cd 06-OpenMachineLab
+export ONNXRUNTIME_DIR=/path/to/onnxruntime-linux-x64-1.16.3
+cmake -S . -B build
+cmake --build build -j
+./build/oml_tests
 ```
 
 ## ADR 列表
